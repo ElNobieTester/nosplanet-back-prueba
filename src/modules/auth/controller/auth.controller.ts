@@ -99,7 +99,13 @@ export class AuthController {
         return this.authService.login(body);
     }
 
-    @UseGuards(AuthGuard('jwt')) // <--- ¡Protegido!
+    @UseGuards(AuthGuard('jwt'))
+    @Post('invite-manager')
+    async inviteManager(@Body() body: { email: string }) {
+        return this.authService.inviteManager(body.email);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
     @Get('check-status')
     async checkAuthStatus(@Req() req) {
         return this.authService.checkAuthStatus(req.user);

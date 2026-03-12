@@ -27,7 +27,10 @@ export class UsersService {
         }
 
         // 2. Crear usuario base
-        const createdUser = new this.userModel(createUserDto);
+        const createdUser = new this.userModel({
+            ...createUserDto,
+            needsPasswordChange: (createUserDto.role === UserRole.ADMIN || createUserDto.role === UserRole.MANAGER)
+        });
         const savedUser = await createdUser.save();
 
         // 3. Crear Perfil según el Rol
@@ -132,5 +135,22 @@ export class UsersService {
         const updatedUser = await this.userModel.findByIdAndUpdate(userId, { ...data }, { new: true });
         if (!updatedUser) throw new NotFoundException('Usuario no encontrado');
         return updatedUser;
+    }
+
+    async changePassword(userId: string, newPassword: string) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        const updatedUser = await this.userModel.findByIdAndUpdate(
+            userId,
+            {
+                password: hashedPassword,
+                needsPasswordChange: false
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) throw new NotFoundException('Usuario no encontrado');
+        return { message: 'Contraseña actualizada correctamente' };
     }
 }

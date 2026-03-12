@@ -82,4 +82,14 @@ export class UsersController {
 
         return await this.usersService.update(userId, { pushToken });
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('change-password')
+    @ApiOperation({ summary: 'Change password and clear first-login flag' })
+    async changePassword(
+        @Req() req,
+        @Body() body: { newPassword: string }
+    ) {
+        return this.usersService.changePassword(req.user.sub, body.newPassword);
+    }
 }

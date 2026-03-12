@@ -62,6 +62,9 @@ export class User {
 
     @Prop({ type: String, default: null })
     pushToken: string; //
+
+    @Prop({ default: false })
+    needsPasswordChange: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
