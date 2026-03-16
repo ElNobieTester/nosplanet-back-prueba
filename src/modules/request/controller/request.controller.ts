@@ -18,9 +18,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CloudinaryService } from 'src/common/cloudinary.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('requests')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class RequestsController {
     constructor(
         private readonly cloudinaryService: CloudinaryService,

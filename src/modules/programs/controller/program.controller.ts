@@ -2,7 +2,7 @@ import { Controller, Get, Param, Post, Body, Patch, Delete, UseGuards, Req } fro
 import { ProgramsService } from "../service/program.service";
 import { CreateProgramDto } from "../dto/create-program.dto";
 import { UpdateProgramDto } from "../dto/update-program.dto";
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ProgramType } from "../enum/progra-type.enum";
 import { Program } from "../schema/program.schema";
 import { AuthGuard } from "@nestjs/passport";
@@ -10,6 +10,7 @@ import { AuthGuard } from "@nestjs/passport";
 @ApiTags('Programs')
 @Controller('programs')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) { }
 

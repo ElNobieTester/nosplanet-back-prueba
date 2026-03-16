@@ -55,7 +55,7 @@ export class AuthController {
         // --- REDIRECCIÓN A LA APP MÓVIL (Deep Linking) ---
         // Cambia la IP por la de tu PC (ipconfig/ifconfig)
         // El puerto 8081 es el default de Expo
-        const expoUrl = `exp://192.168.18.9:8081/--/login?token=${jwt.access_token}`;
+        const expoUrl = `exp://192.168.18.9:8081/login?token=${jwt.access_token}`;
 
         // Si ya tienes el build de producción (APK), la URL sería algo como: "recycleapp://login?token=..."
 
@@ -88,7 +88,7 @@ export class AuthController {
     }
 
     @Post('login')
-    @HttpCode(HttpStatus.CREATED)
+    @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Login' })
     @ApiResponse({ status: HttpStatus.CREATED, description: 'Login successful' })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid credentials' })
@@ -100,6 +100,7 @@ export class AuthController {
     }
 
     @UseGuards(AuthGuard('jwt')) // <--- ¡Protegido!
+    @ApiBearerAuth()
     @Get('check-status')
     async checkAuthStatus(@Req() req) {
         return this.authService.checkAuthStatus(req.user);

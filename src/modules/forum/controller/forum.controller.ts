@@ -13,6 +13,7 @@ export class ForumController {
 
     @Post()
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Crear un nuevo post en el foro' })
     create(@Body() createPostDto: CreatePostDto, @Request() req) {
 
@@ -36,6 +37,7 @@ export class ForumController {
 
     @Patch(':id/like')
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Dar o quitar like a un post' })
     toggleLike(@Param('id') id: string, @Request() req) {
         // 👇 AGREGA ESTO IGUAL QUE EN 'create'
@@ -50,6 +52,7 @@ export class ForumController {
     }
     @Post('comment')
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Agregar un comentario a un post' })
     addComment(@Body() body: CreateCommentDto, @Request() req) {
         // body debe tener { postId: "...", content: "..." }
@@ -65,6 +68,7 @@ export class ForumController {
 
     @Get('my-posts')
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Ver solo mis posts' })
     findMyPosts(@Request() req) {
         const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
@@ -73,6 +77,7 @@ export class ForumController {
 
     @Delete(':id') // 👈 Usamos el decorador DELETE
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Eliminar un post (Solo el autor)' })
     deletePost(@Param('id') id: string, @Request() req) {
         const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;

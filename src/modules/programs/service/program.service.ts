@@ -17,16 +17,15 @@ export class ProgramsService {
     ) { }
 
     async findAll(user: any) {
-        if (!user || user.role === 'ADMIN') {
-            return this.programModel.find().exec();
+        // Si es ADMIN o es un Ciudadano normal, que vea todos los programas activos
+        if (!user || user.role === 'ADMIN' || user.role === 'CITIZEN') {
+            return this.programModel.find({ isActive: true }).exec();
         }
 
-        // Si es gestor (MANAGER), filtrar por su institución o por él mismo
-        // Nota: Como el objeto 'user' del JWT no tiene institution, lo buscamos en el modelo
+        // Si es un MANAGER (Gestor), quizás solo quiere ver los suyos
         return this.programModel.find({
-            $or: [
-                { managedBy: user.uid || user.sub || user._id }
-            ]
+            managedBy: user.uid || user.sub || user._id,
+            isActive: true
         }).exec();
     }
 

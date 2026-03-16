@@ -2,6 +2,7 @@ import { Controller, Get, UseGuards, Req, BadRequestException, NotFoundException
 import { LevelsService } from '../service/levels.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from 'src/modules/users/service/users.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('levels')
 export class LevelsController {
@@ -17,6 +18,7 @@ export class LevelsController {
     // 2. NUEVO: OBTENER ESTADO ACTUAL DEL USUARIO
     // Ruta: GET /levels/status
     @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
     @Get('status')
     async getMyStatus(@Req() req) {
         // 🚨 DEBUG: Imprime req.user para ver EXACTAMENTE qué campos tiene tu token
