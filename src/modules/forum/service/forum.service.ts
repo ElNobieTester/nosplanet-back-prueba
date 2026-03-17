@@ -12,14 +12,23 @@ export class ForumService {
     ) { }
 
     async create(createPostDto: any, userId: string) {
-        const newPost = new this.postModel({
-            ...createPostDto,
-            author: userId,
-        });
-        await newPost.save();
+        // 1. Extraemos la data incluyendo la posible imagen
+        const { title, content, category, imageUrl } = createPostDto;
 
-        // 2. Populamos el autor para devolverlo completo al frontend
-        return newPost.populate('author', 'fullName avatarUrl');
+        const newPost = new this.postModel({
+            title,
+            content,
+            category,
+            imageUrl: imageUrl || null, // 📸 Guardamos la URL de la imagen si existe
+            author: userId,
+            likes: [],
+            commentsCount: 0,
+        });
+
+        const savedPost = await newPost.save();
+
+        // 2. Populamos el autor para devolver el objeto completo al frontend de inmediato
+        return savedPost.populate('author', 'fullName avatarUrl');
     }
 
     // Obtener feed con datos del autor (Nombre y Avatar)

@@ -1,6 +1,12 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, NotFoundException, UnauthorizedException, Delete } from '@nestjs/common';
+import {
+    Controller, Get, Post, Body, Param, Patch, UseGuards,
+    Request, UnauthorizedException, Delete, UseInterceptors,
+    UploadedFile, BadRequestException
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ForumService } from '../service/forum.service';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CloudinaryService } from 'src/common/cloudinary.service'; // ☁️ Asegúrate que la ruta sea correcta
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateCommentDto } from '../dto/create-commet.dto';
@@ -9,26 +15,44 @@ import { CreateCommentDto } from '../dto/create-commet.dto';
 @Controller('forum')
 @ApiBearerAuth()
 export class ForumController {
-    constructor(private readonly forumService: ForumService) { }
+    constructor(
+        private readonly forumService: ForumService,
+        private readonly cloudinaryService: CloudinaryService // 🚀 Inyectamos el servicio
+    ) { }
+
+    // Función auxiliar para obtener el ID de forma robusta (como en Requests)
+    private getUserId(req: any): string {
+        return req.user?.id || req.user?.userId || req.user?._id || req.user?.sub;
+    }
 
     @Post()
     @UseGuards(AuthGuard('jwt'))
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Crear un nuevo post en el foro' })
-    create(@Body() createPostDto: CreatePostDto, @Request() req) {
+    @UseInterceptors(FileInterceptor('file')) // 📸 'file' debe ser el nombre del campo en el FormData de Expo
+    @ApiConsumes('multipart/form-data') // 📝 Necesario para que Swagger muestre el botón de subir archivo
+    @ApiOperation({ summary: 'Crear un nuevo post en el foro con imagen opcional' })
+    async create(
+        @Body() createPostDto: CreatePostDto,
+        @Request() req,
+        @UploadedFile() file?: Express.Multer.File // El '?' lo hace opcional
+    ) {
+        const userId = this.getUserId(req);
+        if (!userId) throw new UnauthorizedException('Usuario no identificado');
 
-        // 👇 1. MIRA LA CONSOLA DEL SERVIDOR CUANDO HAGAS LA PETICIÓN
-        console.log('DEBUG USER:', req.user);
+        let imageUrl = null;
 
-        // 👇 2. USA ESTA LÍNEA PARA OBTENER EL ID DE FORMA SEGURA
-        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
-
-        if (!userId) {
-            throw new Error('No se pudo identificar el ID del usuario en el token');
+        // Si el usuario subió una imagen, la mandamos a Cloudinary
+        if (file) {
+            const imageResult = await this.cloudinaryService.uploadFile(file);
+            imageUrl = imageResult.secure_url;
         }
 
-        return this.forumService.create(createPostDto, userId);
+        // Enviamos todo al servicio
+        return this.forumService.create({
+            ...createPostDto,
+            imageUrl // Pasamos la URL (será null si no hay foto)
+        }, userId);
     }
+
     @Get()
     @ApiOperation({ summary: 'Obtener todos los posts (Feed)' })
     findAll() {
@@ -40,23 +64,17 @@ export class ForumController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Dar o quitar like a un post' })
     toggleLike(@Param('id') id: string, @Request() req) {
-        // 👇 AGREGA ESTO IGUAL QUE EN 'create'
-        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
-
-        // Validación de seguridad extra
-        if (!userId) {
-            throw new UnauthorizedException('No se pudo obtener el ID del usuario');
-        }
-
+        const userId = this.getUserId(req);
+        if (!userId) throw new UnauthorizedException('No se pudo obtener el ID del usuario');
         return this.forumService.toggleLike(id, userId);
     }
+
     @Post('comment')
     @UseGuards(AuthGuard('jwt'))
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Agregar un comentario a un post' })
     addComment(@Body() body: CreateCommentDto, @Request() req) {
-        // body debe tener { postId: "...", content: "..." }
-        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
+        const userId = this.getUserId(req);
         return this.forumService.addComment(userId, body);
     }
 
@@ -66,21 +84,12 @@ export class ForumController {
         return this.forumService.findCommentsByPost(postId);
     }
 
-    @Get('my-posts')
-    @UseGuards(AuthGuard('jwt'))
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Ver solo mis posts' })
-    findMyPosts(@Request() req) {
-        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
-        return this.forumService.findByAuthor(userId);
-    }
-
-    @Delete(':id') // 👈 Usamos el decorador DELETE
+    @Delete(':id')
     @UseGuards(AuthGuard('jwt'))
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Eliminar un post (Solo el autor)' })
     deletePost(@Param('id') id: string, @Request() req) {
-        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
+        const userId = this.getUserId(req);
         return this.forumService.deletePost(id, userId);
     }
 }
