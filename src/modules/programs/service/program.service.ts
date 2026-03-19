@@ -18,7 +18,7 @@ export class ProgramsService {
 
     async findAll(user: any) {
         // Si es ADMIN o es un Ciudadano normal, que vea todos los programas activos
-        if (!user || user.role === 'ADMIN' || user.role === 'CITIZEN') {
+        if (!user || user.role === 'ADMIN' || user.role === 'CITIZEN' || user.role === 'RECYCLER') {
             return this.programModel.find({ isActive: true }).exec();
         }
 
