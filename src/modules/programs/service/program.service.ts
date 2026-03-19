@@ -17,13 +17,15 @@ export class ProgramsService {
     ) { }
 
     async findAll(user: any) {
-        // 💡 Quita el { isActive: true } para ver si los datos aparecen
+        // Si es ADMIN o es un Ciudadano normal, que vea todos los programas activos
         if (!user || user.role === 'ADMIN' || user.role === 'CITIZEN') {
-            return this.programModel.find().exec(); // Sin filtros
+            return this.programModel.find({ isActive: true }).exec();
         }
 
+        // Si es un MANAGER (Gestor), quizás solo quiere ver los suyos
         return this.programModel.find({
-            managedBy: user.uid || user.sub || user._id
+            managedBy: user.uid || user.sub || user._id,
+            isActive: true
         }).exec();
     }
 
