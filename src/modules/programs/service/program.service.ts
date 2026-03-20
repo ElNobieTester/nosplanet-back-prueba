@@ -34,6 +34,39 @@ export class ProgramsService {
         return this.programModel.find(filter).exec();
     }
 
+    async joinProgram(programId: string, userId: string) {
+        // 1. Verificamos que el programa exista
+        const program = await this.programModel.findById(programId);
+        if (!program) throw new NotFoundException('El programa no existe');
+
+        // 2. Agregamos el ID del usuario al arreglo de participantes
+        // Usamos $addToSet para que sea una operación atómica y única
+        const updatedProgram = await this.programModel.findByIdAndUpdate(
+            programId,
+            { $addToSet: { participants: userId } }, // 'participants' debe estar en tu Schema
+            { new: true }
+        ).exec();
+
+        return {
+            message: '¡Te has unido al programa con éxito! 🌿',
+            program: updatedProgram
+        };
+    }
+
+    async leaveProgram(programId: string, userId: string) {
+        // Usamos $pull para remover el ID del arreglo
+        const updatedProgram = await this.programModel.findByIdAndUpdate(
+            programId,
+            { $pull: { participants: userId } },
+            { new: true }
+        ).exec();
+
+        return {
+            message: 'Has dejado el programa.',
+            program: updatedProgram
+        };
+    }
+
     async create(createProgramDto: CreateProgramDto, user: any): Promise<Program> {
         // Obtenemos el perfil completo del usuario para sacar la institución
         const fullUser = await this.usersService.findOne(user.sub || user.uid || user._id);

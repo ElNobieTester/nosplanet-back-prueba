@@ -20,6 +20,20 @@ export class ProgramsController {
         return this.programsService.findAll(req.user);
     }
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post(':id/join')
+    async join(@Param('id') id: string, @Req() req) {
+        const userId = req.user.sub || req.user.id; // Depende de tu JWT
+        return this.programsService.joinProgram(id, userId);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Delete(':id/leave')
+    async leave(@Param('id') id: string, @Req() req) {
+        const userId = req.user.sub || req.user.id;
+        return this.programsService.leaveProgram(id, userId);
+    }
+
     @Post()
     @ApiOperation({ summary: 'Crear un nuevo programa ambiental' })
     @ApiBody({ type: CreateProgramDto })

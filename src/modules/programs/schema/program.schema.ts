@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { ProgramType } from '../enum/progra-type.enum';
 
 export type ProgramDocument = Program & Document;
@@ -68,6 +68,9 @@ export class Program {
 
     @Prop({ required: false, default: 'PROYECTO' })
     category: string;
+
+    @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+    participantsObj: Types.ObjectId[];
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program);
