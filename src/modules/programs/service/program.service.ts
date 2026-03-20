@@ -43,7 +43,7 @@ export class ProgramsService {
         // Usamos $addToSet para que sea una operación atómica y única
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
-            { $addToSet: { participants: userId } }, // 'participants' debe estar en tu Schema
+            { $addToSet: { participantsObj: userId } }, // 'participants' debe estar en tu Schema
             { new: true }
         ).exec();
 
