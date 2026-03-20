@@ -1,5 +1,4 @@
-// src/modules/users/controller/users.controller.ts
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Request, Req, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Req, Patch } from '@nestjs/common';
 import { UsersService } from '../service/users.service';
 import { CreateUserDto } from '../dto/users.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
@@ -13,6 +12,10 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
+    // ==========================================
+    // 1. RUTAS ESTÁTICAS (Sin parámetros :id)
+    // ==========================================
+
     @Post()
     @ApiOperation({ summary: 'Register a new user (Standard)' })
     create(@Body() createUserDto: CreateUserDto) {
@@ -25,15 +28,28 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Get user profile' })
-    findOne(@Param('id') id: string) {
-        return this.usersService.findOne(id);
+    @UseGuards(AuthGuard('jwt'))
+    @Get('profile') // ✅ MOVIDO ARRIBA DE :id
+    @ApiOperation({ summary: 'Get my own profile (Logged User)' })
+    async getMyProfile(@Req() req) {
+        // OJO: Asegúrate si es .sub, .id o .userId según tu estrategia JWT
+        const userId = req.user.sub || req.user.id || req.user.userId;
+        return this.usersService.getProfile(userId);
     }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.usersService.remove(id);
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('profile') // ✅ MOVIDO ARRIBA DE :id
+    @ApiOperation({ summary: 'Update user profile (Name & Phone)' })
+    async updateProfile(@Req() req, @Body() body: UpdateProfileDto) {
+        const userId = req.user.sub || req.user.id || req.user.userId;
+        return this.usersService.updateProfile(userId, body);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('update-push-token') // ✅ MOVIDO ARRIBA DE :id
+    async updatePushToken(@Req() req, @Body('pushToken') pushToken: string) {
+        const userId = req.user.sub || req.user.id || req.user.userId;
+        return await this.usersService.update(userId, { pushToken });
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -43,31 +59,22 @@ export class UsersController {
     @ApiBody({
         schema: {
             type: 'object',
-            properties: {
-                file: {
-                    type: 'string',
-                    format: 'binary',
-                },
-            },
+            properties: { file: { type: 'string', format: 'binary' } },
         },
     })
-    async uploadAvatar(
-        @Req() req,
-        @UploadedFile() file: Express.Multer.File
-    ) {
-        return this.usersService.updateAvatar(req.user.sub, file);
+    async uploadAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
+        const userId = req.user.sub || req.user.id || req.user.userId;
+        return this.usersService.updateAvatar(userId, file);
     }
 
-    @UseGuards(AuthGuard('jwt'))
-    @Patch('profile')
-    @ApiOperation({ summary: 'Update user profile (Name & Phone)' })
-    @ApiResponse({ status: 200, description: 'User profile updated successfully' })
-    @ApiResponse({ status: 404, description: 'User not found' })
-    async updateProfile(
-        @Req() req,
-        @Body() body: UpdateProfileDto
-    ) {
-        return this.usersService.updateProfile(req.user.sub, body);
+    // ==========================================
+    // 2. RUTAS DINÁMICAS (Con parámetros :id)
+    // ==========================================
+
+    @Get(':id')
+    @ApiOperation({ summary: 'Get user profile by ID' })
+    findOne(@Param('id') id: string) {
+        return this.usersService.findOne(id);
     }
 
     @Patch(':id')
@@ -75,19 +82,10 @@ export class UsersController {
     update(@Param('id') id: string, @Body() updateData: any) {
         return this.usersService.update(id, updateData);
     }
-    @UseGuards(AuthGuard('jwt')) // Solo usuarios logueados
-    @Patch('update-push-token')
-    async updatePushToken(@Req() req, @Body('pushToken') pushToken: string) {
-        const userId = req.user.userId; // Extraído del JWT
 
-        return await this.usersService.update(userId, { pushToken });
-    }
-
-    @Get('profile')
-    @UseGuards(AuthGuard('jwt')) // Asegúrate de tener protección por JWT
-    async getMyProfile(@Req() req) {
-        // El ID viene del token JWT decodificado
-        const userId = req.user.id;
-        return this.usersService.getProfile(userId);
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete user' })
+    remove(@Param('id') id: string) {
+        return this.usersService.remove(id);
     }
 }
