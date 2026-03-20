@@ -57,7 +57,7 @@ export class ProgramsService {
         // Usamos $pull para remover el ID del arreglo
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
-            { $pull: { participants: userId } },
+            { $pull: { participantsObj: userId } },
             { new: true }
         ).exec();
 
