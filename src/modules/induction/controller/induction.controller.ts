@@ -48,10 +48,13 @@ export class InductionController {
         return this.inductionService.remove(id);
     }
 
+
     @Patch(':id/view')
-    @ApiOperation({ summary: 'Increment view count' })
-    @ApiResponse({ status: 200, description: 'View count incremented.', type: Induction })
-    incrementView(@Param('id') id: string) {
-        return this.inductionService.incrementView(id);
+    @ApiOperation({ summary: 'Registrar vista de video y reclamar puntos' })
+    async viewVideo(
+        @Param('id') inductionId: string,
+        @Body('userId') userId: string, // En una app real, esto vendría del JWT (User Decorator)
+    ) {
+        return this.inductionService.viewAndClaimPoints(inductionId, userId);
     }
 }

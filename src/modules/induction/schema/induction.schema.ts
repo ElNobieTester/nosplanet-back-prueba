@@ -18,11 +18,8 @@ export class Induction {
     @Prop({ required: true, default: 0 })
     views: number;
 
-    @Prop({ required: true })
-    xpPoints: number;
-
-    @Prop({ required: true })
-    completionXP: number;
+    @Prop({ required: true, default: 0 })
+    ecoPoints: number; // Unificamos xpPoints y completionXP aquí
 
     @Prop({ required: true })
     videoUrl: string;

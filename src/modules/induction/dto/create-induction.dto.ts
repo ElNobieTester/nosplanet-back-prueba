@@ -21,13 +21,9 @@ export class CreateInductionDto {
     @IsOptional()
     views?: number;
 
-    @ApiProperty({ description: 'XP Points for watching', example: 10 })
+    @ApiProperty({ description: 'eco Points for completion', example: 15 })
     @IsNumber()
-    xpPoints: number;
-
-    @ApiProperty({ description: 'XP Points for completion', example: 15 })
-    @IsNumber()
-    completionXP: number;
+    ecoPoints: number;
 
     @ApiProperty({ description: 'YouTube Video URL', example: 'https://www.youtube.com/watch?v=cvakvfXj0KE' })
     @IsString()

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Transform } from 'class-transformer';
 import { UserRole } from '../enum/userRole.enum';
 
 export type UserDocument = HydratedDocument<User>;
@@ -11,6 +12,7 @@ export class User {
     fullName: string;
 
     @Prop({ required: true, unique: true })
+    @Transform(({ value }) => value?.toLowerCase().trim())
     email: string;
 
     @Prop({ default: 'local' }) // 'local' o 'google'
@@ -62,6 +64,9 @@ export class User {
 
     @Prop({ type: String, default: null })
     pushToken: string; //
+
+    @Prop({ type: [String], default: [] })
+    completedInductions: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
