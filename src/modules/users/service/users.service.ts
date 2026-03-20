@@ -133,4 +133,19 @@ export class UsersService {
         if (!updatedUser) throw new NotFoundException('Usuario no encontrado');
         return updatedUser;
     }
+
+    async getProfile(userId: string) {
+        // 1. Buscamos el usuario base
+        const user = await this.userModel.findById(userId).lean().exec();
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+
+        // 2. Buscamos su perfil extendido (Puntos, niveles, etc.)
+        const profile = await this.getProfileForUser(userId, user.role as any);
+
+        // Retornamos el objeto unido
+        return {
+            ...user,
+            profile // Aquí vendrán los current_points actualizados
+        };
+    }
 }

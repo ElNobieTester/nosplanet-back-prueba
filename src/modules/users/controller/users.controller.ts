@@ -82,4 +82,12 @@ export class UsersController {
 
         return await this.usersService.update(userId, { pushToken });
     }
+
+    @Get('profile')
+    @UseGuards(AuthGuard('jwt')) // Asegúrate de tener protección por JWT
+    async getMyProfile(@Req() req) {
+        // El ID viene del token JWT decodificado
+        const userId = req.user.id;
+        return this.usersService.getProfile(userId);
+    }
 }
