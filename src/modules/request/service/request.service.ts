@@ -154,45 +154,42 @@ export class RequestsService {
         const request = await this.requestModel.findById(requestId);
         if (!request) throw new NotFoundException('Solicitud no encontrada');
 
-        if (request.collector?.toString() !== collectorId.toString()) {
-            throw new BadRequestException('No tienes permiso para completar esta solicitud.');
-        }
-
         if (request.status !== 'ACCEPTED') {
             throw new BadRequestException('La solicitud debe estar aceptada para finalizarla.');
         }
-        // --- ACTUALIZACIÓN DE LA SOLICITUD ---
-        request.status = 'COMPLETED';
-        request.completedAt = new Date();
-        (request as any).evidenceUrl = evidenceUrl;
-        await request.save();
 
-        // --- LÓGICA DE GAMIFICACIÓN EN PERFIL SEPARADO (EcoParticipant) ---
-        const participant = await this.participantModel.findOne({ user: request.citizen });
-        if (!participant) throw new NotFoundException('Perfil de participante no encontrado');
+        // 1. ACTUALIZACIÓN DE LA SOLICITUD (Hacemos esto al final o usamos una transacción)
+        // Para evitar el error que tuviste, vamos a intentar actualizar los puntos PRIMERO.
 
+        // 2. Localizar al participante usando Types.ObjectId para asegurar el match
+        const citizenId = new Types.ObjectId(request.citizen as any);
+        const participant = await this.participantModel.findOne({ user: citizenId });
+
+        if (!participant) {
+            throw new NotFoundException('El ciudadano no tiene un perfil de Eco-Participante activo');
+        }
+
+        // 3. Lógica de Puntos y Niveles
         const newTotalPoints = (participant.current_points || 0) + request.estimatedPoints;
 
-        // Buscamos el nivel correspondiente en la tabla de niveles
+        // Buscamos nivel (Ojo: asegúrate de que existan niveles en tu DB)
         const correctLevel = await this.levelModel.findOne({
             minPoints: { $lte: newTotalPoints },
             maxPoints: { $gte: newTotalPoints }
         }).exec();
 
-        const finalLevelId = correctLevel ? correctLevel.levelNumber : 7;
+        const finalLevelId = correctLevel ? correctLevel.levelNumber : participant.level_id;
 
-        // Mapeo dinámico de categoría
-        const categoryMap: { [key: string]: string } = {
-            'Plástico': 'plastic',
-            'Papel': 'paper',
-            'Cartón': 'paper',
-            'Vidrio': 'glass',
-            'Metal': 'metal'
-        };
-        const categoryKey = categoryMap[request.category] || 'plastic';
+        // 4. Mapeo de categoría (Case Insensitive)
+        const cat = request.category.toLowerCase();
+        const categoryKey = cat.includes('plas') ? 'plastic' :
+            cat.includes('pape') || cat.includes('cart') ? 'paper' :
+                cat.includes('vidr') ? 'glass' :
+                    cat.includes('met') ? 'metal' : 'plastic';
+
         const isPeso = request.measureType?.toLowerCase() === 'peso';
 
-        // --- ACTUALIZACIÓN ATÓMICA DEL PARTICIPANTE ---
+        // 5. ACTUALIZACIÓN ATÓMICA
         const updateData: any = {
             $set: {
                 current_points: newTotalPoints,
@@ -204,24 +201,28 @@ export class RequestsService {
             }
         };
 
-        // Incrementar stats detallados
+        // Aseguramos que existan las rutas de stats
         if (isPeso) {
-            updateData.$inc['recyclingStats.total_kg'] = request.quantity;
             updateData.$inc[`recyclingStats.by_category.${categoryKey}.kg`] = request.quantity;
+            updateData.$inc['recyclingStats.total_kg'] = request.quantity;
         } else {
-            updateData.$inc['recyclingStats.total_units'] = request.quantity;
             updateData.$inc[`recyclingStats.by_category.${categoryKey}.units`] = request.quantity;
+            updateData.$inc['recyclingStats.total_units'] = request.quantity;
         }
 
-        await this.participantModel.updateOne({ user: request.citizen }, updateData);
+        // 6. EJECUTAR CAMBIOS
+        await this.participantModel.updateOne({ user: citizenId }, updateData);
+
+        // Ahora sí, cerramos la solicitud
+        request.status = 'COMPLETED';
+        request.completedAt = new Date();
+        (request as any).evidenceUrl = evidenceUrl;
+        await request.save();
 
         return {
-            message: '¡Recojo completado! Impacto y nivel actualizados en tu perfil.',
+            message: '¡Recojo completado!',
             pointsAwarded: request.estimatedPoints,
-            newLevel: finalLevelId,
-            evidence: evidenceUrl,
-            recycled: request.quantity
+            newTotal: newTotalPoints
         };
-
     }
 }
