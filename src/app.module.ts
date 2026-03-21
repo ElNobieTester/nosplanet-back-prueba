@@ -18,6 +18,7 @@ import { RequestModule } from './modules/request/request.module';
 import { EcoHistoryModule } from './modules/eco-histories/eco-history.module';
 import { DonationsModule } from './donations/donations.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { CoordinatorsModule } from './modules/coordinators/coordinators.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ContactModule } from './modules/contact/contact.module';
     EcoHistoryModule,
     DonationsModule,
     ContactModule,
+    CoordinatorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
