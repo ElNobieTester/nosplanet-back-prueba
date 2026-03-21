@@ -73,7 +73,7 @@ export class CreateProgramDto {
 
     @ApiProperty({ example: ['Objetivo 1', 'Objetivo 2'], description: 'Objetivos del programa' })
     @IsArray()
-    @IsString({ each: true }) // Valida que cada elemento del array sea string
+    @IsString({ each: true })
     objectives: string[];
 
     @ApiProperty({ example: ['Actividad 1', 'Actividad 2'], description: 'Actividades del programa' })
@@ -83,11 +83,9 @@ export class CreateProgramDto {
 
     @ApiProperty({ example: 'email@example.com', description: 'Email del contacto' })
     @ValidateNested()
-    @Type(() => ContactDto) // Transforma el JSON a la clase ContactDto para validarlo
+    @Type(() => ContactDto)
     contact: ContactDto;
 
-    // Nota: La imagen se suele manejar aparte con un Interceptor de archivos, 
-    // pero si envías la URL directa usa esto:
     @ApiProperty({ example: 'https://www.example.com', description: 'URL de la imagen del programa' })
     @IsOptional()
     @IsString()
@@ -102,4 +100,27 @@ export class CreateProgramDto {
     @IsOptional()
     @IsString()
     category?: string;
+
+    @ApiProperty({ example: 'Seguir estos pasos...', description: 'Indicaciones especiales' })
+    @IsOptional()
+    @IsString()
+    indications?: string;
+
+    @ApiProperty({ example: ['id_coord_1'], description: 'Lista de coordinadores' })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    coordinatorList?: string[];
+
+    @ApiProperty({ example: ['id_user_1'], description: 'Lista de participantes' })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    participantList?: string[];
+
+    @ApiProperty({ example: ['id_user_1'], description: 'Lista de asistentes' })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    attendedList?: string[];
 }

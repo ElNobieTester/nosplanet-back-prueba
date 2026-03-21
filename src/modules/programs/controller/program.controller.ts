@@ -9,17 +9,24 @@ import { AuthGuard } from "@nestjs/passport";
 
 @ApiTags('Programs')
 @Controller('programs')
-@UseGuards(AuthGuard('jwt'))
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) { }
 
+    @Get('public')
+    @ApiOperation({ summary: 'Listar programas activos para landing (público)' })
+    async findPublic() {
+        return this.programsService.findAllPublic();
+    }
+
     @Get()
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Listar todos los programas' })
     async findAll(@Req() req) {
         return this.programsService.findAll(req.user);
     }
 
     @Post()
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Crear un nuevo programa ambiental' })
     @ApiBody({ type: CreateProgramDto })
     @ApiResponse({ status: 201, description: 'Programa creado exitosamente', type: Program })
@@ -28,6 +35,7 @@ export class ProgramsController {
     }
 
     @Get('filter/:programType')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Listar todos los programas por tipo' })
     @ApiParam({ name: 'programType', description: 'Tipo de programa' })
     async findAllProgramType(@Param('programType') programType: ProgramType) {
@@ -35,6 +43,7 @@ export class ProgramsController {
     }
 
     @Patch(':id')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Actualizar un programa' })
     @ApiParam({ name: 'id', description: 'ID del programa' })
     @ApiBody({ type: UpdateProgramDto })
@@ -43,6 +52,7 @@ export class ProgramsController {
     }
 
     @Delete(':id')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Eliminar un programa' })
     @ApiParam({ name: 'id', description: 'ID del programa' })
     async delete(@Param('id') id: string) {
@@ -50,8 +60,16 @@ export class ProgramsController {
     }
 
     @Get(':id')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Obtener detalle de un programa' })
     findOne(@Param('id') id: string) {
         return this.programsService.findOne(id);
+    }
+
+    @Post('join/:id')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Unirse a un programa' })
+    join(@Param('id') id: string, @Req() req) {
+        return this.programsService.joinProgram(id, req.user);
     }
 }

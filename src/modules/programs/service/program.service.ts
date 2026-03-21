@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Program } from "../schema/program.schema";
@@ -21,13 +21,27 @@ export class ProgramsService {
             return this.programModel.find().exec();
         }
 
-        // Si es gestor (MANAGER), filtrar por su institución o por él mismo
-        // Nota: Como el objeto 'user' del JWT no tiene institution, lo buscamos en el modelo
+        const userId = user.uid || user.sub || user._id;
+
+        // Si es gestor (MANAGER) o Coordinador, filtrar por managedBy o coordinatorList
         return this.programModel.find({
             $or: [
-                { managedBy: user.uid || user.sub || user._id }
+                { managedBy: userId },
+                { coordinatorList: userId }
             ]
         }).exec();
+    }
+
+    async findAllPublic(): Promise<Program[]> {
+        return this.programModel
+            .find({
+                $or: [
+                    { isActive: true },
+                    { isActive: { $exists: false } }
+                ]
+            })
+            .sort({ createdAt: -1 })
+            .exec();
     }
 
     async findAllProgramType(type?: ProgramType): Promise<Program[]> {
@@ -74,5 +88,28 @@ export class ProgramsService {
             throw new NotFoundException(`Programa con ID ${id} no encontrado`);
         }
         return program;
+    }
+
+    async joinProgram(programId: string, user: any) {
+        const userId = user.sub || user.uid || user._id;
+
+        const program = await this.programModel.findById(programId);
+        if (!program) throw new NotFoundException('Programa no encontrado');
+
+        if (program.participantList.includes(userId)) {
+            throw new BadRequestException('Ya estás participando en este programa');
+        }
+
+        // Add user to program
+        program.participantList.push(userId);
+        program.participants = program.participantList.length;
+        await program.save();
+
+        // Add program to user
+        await this.usersService.update(userId, {
+            $addToSet: { programsParticipating: programId }
+        } as any);
+
+        return { message: 'Te has unido al programa exitosamente', participants: program.participants };
     }
 }
