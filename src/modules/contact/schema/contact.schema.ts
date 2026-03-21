@@ -20,10 +20,16 @@ export class Contact {
     email: string;
 
     @Prop({ required: true })
+    phone: string;
+
+    @Prop({ required: true })
     message: string;
 
     @Prop({ default: ContactStatus.PENDING, enum: ContactStatus })
     status: string;
+
+    @Prop({ required: false })
+    role?: string;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);

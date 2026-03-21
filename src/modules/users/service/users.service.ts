@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from '../schema/users.schema';
 import { AccountManager, AccountManagerDocument } from '../schema/account-manager.schema';
 import { EcoParticipant, EcoParticipantDocument } from '../schema/eco-participant.schema';
+import { Coordinator, CoordinatorDocument } from '../../coordinators/schemas/coordinator.schema';
 import { CreateUserDto } from '../dto/users.dto';
 import { CloudinaryService } from 'src/common/cloudinary.service';
 import { UserRole } from '../enum/userRole.enum';
@@ -16,6 +17,7 @@ export class UsersService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(AccountManager.name) private managerModel: Model<AccountManagerDocument>,
         @InjectModel(EcoParticipant.name) private participantModel: Model<EcoParticipantDocument>,
+        @InjectModel(Coordinator.name) private coordinatorModel: Model<CoordinatorDocument>,
         private cloudinaryService: CloudinaryService
     ) { }
 
@@ -34,19 +36,19 @@ export class UsersService {
         const savedUser = await createdUser.save();
 
         // 3. Crear Perfil según el Rol
-        await this.createProfileForUser(savedUser, createUserDto.institution);
+        await this.createProfileForUser(savedUser, createUserDto);
 
         return savedUser;
     }
 
-    private async createProfileForUser(user: UserDocument, institutionName?: string) {
+    private async createProfileForUser(user: UserDocument, dto: CreateUserDto) {
         const role = user.role as UserRole;
 
         // Si es Admin o Manager (Gestor)
         if (role === UserRole.ADMIN || role === UserRole.MANAGER) {
             await new this.managerModel({
                 user: user._id,
-                institution: institutionName || (role === UserRole.ADMIN ? 'Nos Planet Central' : null)
+                institution: dto.institution || (role === UserRole.ADMIN ? 'Nos Planet Central' : null)
             }).save();
         }
 
@@ -54,6 +56,15 @@ export class UsersService {
         if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS) {
             await new this.participantModel({
                 user: user._id
+            }).save();
+        }
+
+        // Si es COORDINATOR
+        if (role === UserRole.COORDINATOR) {
+            await new this.coordinatorModel({
+                user: user._id,
+                managerId: (dto as any).managerId,
+                programs: (dto as any).programs || []
             }).save();
         }
     }
@@ -95,6 +106,14 @@ export class UsersService {
                 ]
             }).exec();
         }
+        if (role === UserRole.COORDINATOR) {
+            return this.coordinatorModel.findOne({
+                $or: [
+                    { user: userId },
+                    { user: new Types.ObjectId(userId) }
+                ]
+            }).exec();
+        }
         return null;
     }
 
@@ -110,6 +129,7 @@ export class UsersService {
         // También deberíamos borrar los perfiles (Soft delete o cascada)
         await this.managerModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
         await this.participantModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
+        await this.coordinatorModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
         return this.userModel.findByIdAndDelete(id).exec();
     }
 

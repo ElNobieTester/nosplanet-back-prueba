@@ -9,10 +9,12 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { UsersModule } from '../users/users.module'; // Importamos UsersModule\
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LevelsModule } from '../level/levels.module';
+import { CoordinatorsModule } from '../coordinators/coordinators.module';
 
 @Module({
     imports: [
         UsersModule, // Necesario para usar UsersService
+        CoordinatorsModule,
         PassportModule,
         LevelsModule,
         // Configuración dinámica de JWT usando variables de entorno

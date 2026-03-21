@@ -7,6 +7,7 @@ import * as nodemailer from 'nodemailer';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/modules/users/dto/users.dto';
 import { LevelsService } from 'src/modules/level/service/levels.service';
+import { CoordinatorsService } from '../../coordinators/service/coordinators.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly levelsService: LevelsService,
+    private readonly coordinatorsService: CoordinatorsService,
   ) {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -25,8 +27,86 @@ export class AuthService {
     });
   }
 
+  private async sendCoordinatorInvitation(email: string, token: string) {
+    const inviteUrl = `http://localhost:5173/auth/onboarding/${token}`;
+    const year = new Date().getFullYear();
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Invitación Oficial Coordinador - Nos Planet</title>
+        <style>
+          body { margin: 0; padding: 0; background-color: #f0f4f8; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+          .wrapper { width: 100%; table-layout: fixed; background-color: #f0f4f8; padding-bottom: 40px; }
+          .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; color: #1e293b; border-radius: 32px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
+          .header { background: linear-gradient(135deg, #016d4d 0%, #018f64 100%); padding: 60px 40px; text-align: center; position: relative; }
+          .logo-text { color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; margin: 0; }
+          .logo-dot { color: #4ade80; }
+          .badge { background-color: rgba(255, 255, 255, 0.15); color: #ffffff; padding: 8px 20px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; display: inline-block; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.3); }
+          .content { padding: 50px 50px 40px 50px; text-align: center; }
+          .title { font-size: 32px; font-weight: 900; color: #0f172a; margin: 0 0 20px 0; line-height: 1.1; letter-spacing: -1px; }
+          .text { font-size: 16px; line-height: 1.7; color: #475569; margin-bottom: 35px; }
+          .highlight { color: #018f64; font-weight: 800; }
+          .cta-button { background: #018f64; color: #ffffff !important; padding: 22px 45px; border-radius: 20px; font-weight: 900; text-decoration: none; display: inline-block; font-size: 16px; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(1, 143, 100, 0.3); transition: transform 0.3s; }
+          .footer { background-color: #0f172a; padding: 40px; text-align: center; color: #94a3b8; }
+          .footer-text { font-size: 12px; margin: 0; line-height: 1.5; letter-spacing: 0.5px; }
+          .divider { height: 1px; background-color: #f1f5f9; margin: 40px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <table class="main" width="100%">
+            <tr>
+              <td class="header">
+                <div class="badge">Team Member</div>
+                <h1 class="logo-text">Nos Planet<span class="logo-dot">.</span></h1>
+              </td>
+            </tr>
+            <tr>
+              <td class="content">
+                <h2 class="title">¡Únete a la <span style="color: #018f64;">acción</span>!</h2>
+                <p class="text">
+                  Hola,<br><br>
+                  Has sido invitado para unirte como <span class="highlight">Coordinador Operativo</span> en la red oficial de <strong>Nos Planet</strong>. 
+                  Como coordinador, serás la pieza clave para ejecutar programas, realizar pruebas y asegurar el éxito del impacto ambiental en tu zona.
+                </p>
+                <div style="margin: 40px 0;">
+                  <a href="${inviteUrl}" class="cta-button">COMPLETAR MI REGISTRO</a>
+                </div>
+                <div class="divider"></div>
+                <p style="font-size: 13px; color: #94a3b8; font-style: italic; margin: 0;">
+                  Este enlace de seguridad es exclusivo para ti y expirará en un periodo de 48 horas.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td class="footer">
+                <p class="footer-text">
+                  <strong>Nos Planet SAC</strong><br>
+                  Transformando residuos en recursos.<br><br>
+                  &copy; ${year} Recycle App · Todos los derechos reservados.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await this.transporter.sendMail({
+      from: '"Recycle by Nos Planet" <soporte@nosplanet.com>',
+      to: email,
+      subject: '🌿 Invitación: Únete como Coordinador a Nos Planet',
+      html: htmlContent,
+    });
+  }
+
   private async sendManagerInvitation(email: string, token: string) {
-    const inviteUrl = `http://localhost:5174/auth/onboarding/${token}`;
+    const inviteUrl = `http://localhost:5173/auth/onboarding/${token}`;
     const year = new Date().getFullYear();
 
     const htmlContent = `
@@ -52,10 +132,6 @@ export class AuthService {
           .footer { background-color: #0f172a; padding: 40px; text-align: center; color: #94a3b8; }
           .footer-text { font-size: 12px; margin: 0; line-height: 1.5; letter-spacing: 0.5px; }
           .divider { height: 1px; background-color: #f1f5f9; margin: 40px 0; }
-          @media screen and (max-width: 600px) {
-            .content { padding: 40px 30px; }
-            .title { font-size: 26px; }
-          }
         </style>
       </head>
       <body>
@@ -100,11 +176,26 @@ export class AuthService {
     `;
 
     await this.transporter.sendMail({
-      from: '"Liderazgo Nos Planet 🌿" <prastillec@gmail.com>',
+      from: '"Gestión Nos Planet" <soporte@nosplanet.com>',
       to: email,
       subject: '🌿 Invitación Exclusiva: Únete al equipo de Gestión Nos Planet',
       html: htmlContent,
     });
+  }
+
+  async inviteCoordinator(email: string, managerId: string) {
+    const existingUser = await this.usersService.findOneByEmail(email);
+    if (existingUser) {
+      throw new BadRequestException('Este correo ya está registrado en la plataforma.');
+    }
+
+    const invitationToken = this.jwtService.sign(
+      { email, type: 'invitation', role: 'COORDINATOR', managerId },
+      { expiresIn: '48h' }
+    );
+
+    await this.sendCoordinatorInvitation(email, invitationToken);
+    return { success: true, message: 'Invitación enviada con éxito' };
   }
 
   async inviteManager(email: string) {
@@ -157,7 +248,7 @@ export class AuthService {
     `;
 
     this.transporter.sendMail({
-      from: '"Familia Recycle ♻️" <prastillec@gmail.com>',
+      from: '"Comunidad Nos Planet" <soporte@nosplanet.com>',
       to: email,
       subject: '¡Bienvenido! Tu viaje ecológico comienza hoy 🌱',
       html: htmlContent,
@@ -165,31 +256,35 @@ export class AuthService {
   }
 
   async register(userDto: CreateUserDto) {
+    // Check if user exists
     const existingUser = await this.usersService.findOneByEmail(userDto.email);
-    if (existingUser) throw new BadRequestException('El correo ya está registrado');
+    if (existingUser) throw new BadRequestException('El correo ya está registrado en la plataforma');
 
     try {
       const newUser = await this.usersService.create({
         ...userDto,
         authProvider: userDto.authProvider || 'local',
-        role: userDto.role || UserRole.CITIZEN,
+        role: (userDto.role || UserRole.CITIZEN) as UserRole,
       });
+
       this.sendWelcomeEmail(newUser.email, newUser.fullName);
-      return this.generateJwt(newUser);
+      return this.generateJwt(newUser, newUser.role === UserRole.COORDINATOR);
     } catch (error) {
+      console.error('Registration error:', error);
       throw new InternalServerErrorException('Error al registrar usuario');
     }
   }
 
   async login(loginData: { email: string; password: string }) {
     const user = await this.usersService.findOneByEmail(loginData.email);
+
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
-    if (!user.password) throw new UnauthorizedException('Inicia sesión con Google');
+    if (!user.password) throw new UnauthorizedException('Inicia sesión con Google o usa tu contraseña asignada');
 
     const isMatch = await bcrypt.compare(loginData.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
 
-    return this.generateJwt(user);
+    return this.generateJwt(user, user.role === UserRole.COORDINATOR);
   }
 
   async validateGoogleUser(googleUser: any) {
@@ -212,7 +307,7 @@ export class AuthService {
     }
   }
 
-  async generateJwt(user: any) {
+  async generateJwt(user: any, isCoordinator: boolean = false) {
     const profile = user.profile || {};
     const currentPoints = profile.current_points || 0;
     const gamification = await this.levelsService.getLevelStatus(currentPoints);
@@ -229,6 +324,8 @@ export class AuthService {
         avatar: user.avatarUrl,
         phone: user.phone,
         institution: profile.institution || null,
+        managerId: isCoordinator ? user.managerId : undefined,
+        programs: isCoordinator ? user.programs : undefined,
         gamification,
         membershipTier: profile.membershipTier || 'NONE',
         points: currentPoints,
@@ -299,7 +396,7 @@ export class AuthService {
     `;
 
     await this.transporter.sendMail({
-      from: '"Seguridad Recycle" <prastillec@gmail.com>',
+      from: '"Seguridad Nos Planet" <soporte@nosplanet.com>',
       to: email,
       subject: platform === 'web' ? '🔐 Restablece tu contraseña - Recycle Web' : '📱 Tu código de seguridad - Recycle App',
       html: platform === 'web' ? htmlWeb : htmlMobile,
@@ -323,8 +420,9 @@ export class AuthService {
   }
 
   async checkAuthStatus(userPayload: any) {
-    const dbUser = await this.usersService.findOne(userPayload.sub || userPayload._id);
+    const dbUser = await this.usersService.findOne(userPayload.sub || userPayload._id) as any;
+
     if (!dbUser) throw new UnauthorizedException('Usuario no encontrado');
-    return this.generateJwt(dbUser);
+    return this.generateJwt(dbUser, dbUser.role === UserRole.COORDINATOR);
   }
 }

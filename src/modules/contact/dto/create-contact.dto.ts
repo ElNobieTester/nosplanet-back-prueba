@@ -12,6 +12,11 @@ export class CreateContactDto {
     @IsNotEmpty()
     email: string;
 
+    @ApiProperty({ example: '+51 987 654 321', description: 'Phone number' })
+    @IsNotEmpty()
+    @IsString()
+    phone: string;
+
     @ApiProperty({ example: 'Quiero unirme al proyecto verde', description: 'Message' })
     @IsNotEmpty()
     @IsString()
