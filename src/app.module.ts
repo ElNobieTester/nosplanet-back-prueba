@@ -5,9 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config'; // <--- 1. IMPORTANTE: Importar esto
 import { CloudinaryModule } from './common/cloudinary.module';
 import { UsersModule } from './modules/users/users.module';
-import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { MaterialModule } from './modules/material/material.module';
+
 import { InductionModule } from './modules/induction/induction.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { LevelsModule } from './modules/level/levels.module';
@@ -30,9 +29,8 @@ import { ContactModule } from './modules/contact/contact.module';
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/NosPlanetInfo'),
     CloudinaryModule,
     UsersModule,
-    RecyclingModule,
     AuthModule,
-    MaterialModule,
+
     LevelsModule,
     InductionModule,
     PartnersModule,
