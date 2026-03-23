@@ -109,4 +109,32 @@ export class RedemptionsService {
             };
         }));
     }
+
+
+    async findByCode(code: string) {
+        const cleanCode = code.trim().toUpperCase();
+
+        // 1. Buscamos el canje que esté PENDIENTE
+        const redemption = await this.redemptionModel.findOne({
+            redemptionCode: cleanCode,
+            status: 'PENDING' // 👈 Importante: solo buscamos los que no se han entregado
+        })
+            .populate('rewardId') // Traemos info del premio (título, imagen)
+            .lean()
+            .exec();
+
+        // 2. Si no existe, lanzamos error 404
+        if (!redemption) {
+            throw new NotFoundException('Código no encontrado, ya fue entregado o es inválido');
+        }
+
+        // 3. Usamos tu UsersService para traer al usuario con su PROFILE (puntos, etc.)
+        const fullUser = await this.usersService.findOne(redemption.userId.toString());
+
+        // 4. Retornamos el objeto "armado" para el Frontend
+        return {
+            ...redemption,
+            userId: fullUser
+        };
+    }
 }

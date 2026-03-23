@@ -65,4 +65,9 @@ export class RedemptionsController {
     findAll() {
         return this.service.findAll(); // Necesitarás crear este método en el Service
     }
+
+    @Get('search/:code') // 👈 Solo busca, no cambia nada
+    search(@Param('code') code: string) {
+        return this.service.findByCode(code);
+    }
 }
