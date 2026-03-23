@@ -188,4 +188,19 @@ export class UsersService {
             profile // Aquí vendrán los current_points actualizados
         };
     }
+
+    async updatePoints(userId: string, points: number) {
+        // Usamos $inc: si points es -50, restará; si es 50, sumará.
+        const updatedProfile = await this.participantModel.findOneAndUpdate(
+            { user: new Types.ObjectId(userId) },
+            { $inc: { ecoPoints: points } },
+            { new: true }
+        ).exec();
+
+        if (!updatedProfile) {
+            throw new NotFoundException('No se encontró un perfil de participante para este usuario');
+        }
+
+        return updatedProfile;
+    }
 }
