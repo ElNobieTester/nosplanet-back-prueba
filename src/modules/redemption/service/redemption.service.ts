@@ -41,7 +41,7 @@ export class RedemptionsService {
         if (reward.stock <= 0) throw new BadRequestException('Premio agotado');
 
         // Accedemos al perfil del usuario para validar puntos
-        const userPoints = user.profile?.ecoPoints || 0;
+        const userPoints = user.profile?.current_points || 0;
         if (userPoints < reward.points) {
             throw new BadRequestException('Puntos insuficientes para este canje');
         }
