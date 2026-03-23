@@ -56,44 +56,39 @@ export class ProgramsService {
         const program = await this.programModel.findById(programId);
         if (!program) throw new NotFoundException('Programa no encontrado');
 
-        // Usamos participantList para la validación (basado en la rama de Raul)
+        // ✅ CORRECCIÓN: Usa participantList (como está en tu Schema)
         if (program.participantList?.includes(userId)) {
             throw new BadRequestException('Ya estás participando en este programa');
         }
 
-        // 1. Actualizamos el Programa: Agregamos al usuario y subimos el contador
-        await this.programModel.findByIdAndUpdate(
+        const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
             {
-                $addToSet: { participantList: userId }, // Evita duplicados a nivel DB
-                $inc: { participants: 1 }               // Incrementa el contador numérico
+                $addToSet: { participantList: userId }, // ✅ Nombre correcto
+                $inc: { participants: 1 }
             },
             { new: true }
         ).exec();
 
-        // 2. Actualizamos al Usuario: Le agregamos el programa a su perfil
         await this.usersService.update(userId, {
             $addToSet: { programsParticipating: programId }
         } as any);
 
-        return {
-            message: 'Te has unido al programa exitosamente',
-            programId
-        };
+        return { message: '¡Unido con éxito!', program: updatedProgram };
     }
 
     async leaveProgram(programId: string, userId: string) {
-        // Usamos $pull para remover el ID del arreglo
+        // ✅ CORRECCIÓN: Usa participantList
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
-            { $pull: { participantsObj: userId } },
+            {
+                $pull: { participantList: userId }, // ✅ Nombre correcto
+                $inc: { participants: -1 }
+            },
             { new: true }
         ).exec();
 
-        return {
-            message: 'Has dejado el programa.',
-            program: updatedProgram
-        };
+        return { message: 'Has dejado el programa.', program: updatedProgram };
     }
 
     async create(createProgramDto: CreateProgramDto, user: any): Promise<Program> {
