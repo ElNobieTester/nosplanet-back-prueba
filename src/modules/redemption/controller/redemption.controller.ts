@@ -66,8 +66,10 @@ export class RedemptionsController {
         return this.service.findAll(); // Necesitarás crear este método en el Service
     }
 
-    @Get('search/:code') // 👈 Solo busca, no cambia nada
-    search(@Param('code') code: string) {
+    @Get('search/:code')
+    @ApiOperation({ summary: 'Buscar información de un código de canje sin validarlo' })
+    @ApiParam({ name: 'code', example: 'ECO-A1B2C' })
+    findByCode(@Param('code') code: string) {
         return this.service.findByCode(code);
     }
 }
