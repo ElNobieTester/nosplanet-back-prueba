@@ -3,26 +3,58 @@ import { AuthGuard } from "@nestjs/passport";
 import { RedemptionsService } from "../service/redemption.service";
 import { CreateRedemptionDto } from "../dto/create-redemption.dto";
 import { Roles } from "src/modules/auth/decorators/roles.decorator";
-import { ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
+import {
+    ApiBearerAuth,
+    ApiOperation,
+    ApiTags,
+    ApiResponse,
+    ApiParam,
+    ApiBody
+} from "@nestjs/swagger";
 
-
-
+@ApiTags('Redemptions (Canjes)') // ✅ Agrupa los endpoints en Swagger
+@ApiBearerAuth()
 @Controller('redemptions')
 @UseGuards(AuthGuard('jwt'))
-@ApiBearerAuth()
 export class RedemptionsController {
     constructor(private readonly service: RedemptionsService) { }
 
-    // Este lo usa el CIUDADANO desde la App
+    // ==========================================
+    // 1. FLUJO CIUDADANO (APP MÓVIL)
+    // ==========================================
+
     @Post()
-    @ApiOperation({ summary: 'Crear un canje' })
+    @ApiOperation({
+        summary: 'Crear un nuevo canje',
+        description: 'Descuenta puntos al usuario y stock al premio, generando un código ECO-XXXX.'
+    })
+    @ApiBody({ type: CreateRedemptionDto })
+    @ApiResponse({ status: 201, description: 'Canje creado con éxito.' })
+    @ApiResponse({ status: 400, description: 'Puntos insuficientes o Stock agotado.' })
+    @ApiResponse({ status: 404, description: 'Premio no encontrado.' })
     redeem(@Req() req, @Body() createDto: CreateRedemptionDto) {
-        return this.service.create(req.user.sub, createDto);
+        // Obtenemos el ID del usuario directamente del Token JWT
+        const userId = req.user.sub || req.user.uid || req.user._id;
+        return this.service.create(userId, createDto);
     }
 
-    // Este lo usa el ADMIN desde la Web (Dashboard)
+    // ==========================================
+    // 2. FLUJO ADMINISTRADOR (WEB DASHBOARD)
+    // ==========================================
+
     @Patch('validate/:code')
-    @ApiOperation({ summary: 'Validar canje' })
+    @ApiOperation({
+        summary: 'Validar y entregar premio',
+        description: 'Busca un código pendiente y cambia su estado a DELIVERED.'
+    })
+    @ApiParam({
+        name: 'code',
+        description: 'El código generado por la app (Ej: ECO-H7A2K)',
+        example: 'ECO-A1B2C'
+    })
+    @ApiResponse({ status: 200, description: 'Premio marcado como entregado correctamente.' })
+    @ApiResponse({ status: 404, description: 'El código no existe, expiró o ya fue entregado.' })
+
     validate(@Param('code') code: string) {
         return this.service.validateAndDeliver(code);
     }
