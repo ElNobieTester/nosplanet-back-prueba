@@ -91,10 +91,22 @@ export class RedemptionsService {
 
 
     async findAll() {
-        return this.redemptionModel.find()
-            .populate('userId', 'fullName email') // Traemos datos del usuario
-            .populate('rewardId', 'title imageUrl sponsor') // Traemos datos del premio
+        // 1. Obtenemos los canjes base (sin populate en userId para no duplicar trabajo)
+        const redemptions = await this.redemptionModel.find()
+            .populate('rewardId', 'title imageUrl sponsor points')
             .sort({ createdAt: -1 })
+            .lean()
             .exec();
+
+        // 2. Mapeamos y usamos tu servicio de usuarios para traer el perfil completo
+        return Promise.all(redemptions.map(async (redemption) => {
+            // Obtenemos el usuario con su profile (puntos, etc.) usando tu findOne
+            const fullUser = await this.usersService.findOne(redemption.userId.toString());
+
+            return {
+                ...redemption,
+                userId: fullUser // Ahora userId contiene .profile.current_points
+            };
+        }));
     }
 }
