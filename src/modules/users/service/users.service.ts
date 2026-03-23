@@ -205,7 +205,7 @@ export class UsersService {
         // Usamos $inc: si points es -50, restará; si es 50, sumará.
         const updatedProfile = await this.participantModel.findOneAndUpdate(
             { user: new Types.ObjectId(userId) },
-            { $inc: { ecoPoints: points } },
+            { $inc: { current_points: points } },
             { new: true }
         ).exec();
 
