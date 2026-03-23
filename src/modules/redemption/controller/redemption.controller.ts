@@ -34,7 +34,7 @@ export class RedemptionsController {
     @ApiResponse({ status: 404, description: 'Premio no encontrado.' })
     redeem(@Req() req, @Body() createDto: CreateRedemptionDto) {
         // Obtenemos el ID del usuario directamente del Token JWT
-        const userId = req.user.sub || req.user.uid || req.user._id;
+        const userId = req.user.sub;
         return this.service.create(userId, createDto);
     }
 

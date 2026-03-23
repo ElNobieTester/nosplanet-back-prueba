@@ -1,24 +1,38 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Redemption, RedemptionDocument } from "../schema/redemption.schema";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { UsersService } from "src/modules/users/service/users.service";
 import { RewardsService } from "src/modules/reward/service/reward.service";
 import { CreateRedemptionDto } from "../dto/create-redemption.dto";
+
+
 
 @Injectable()
 export class RedemptionsService {
     constructor(
         @InjectModel(Redemption.name) private redemptionModel: Model<RedemptionDocument>,
+
         private readonly usersService: UsersService,
         private readonly rewardsService: RewardsService,
     ) { }
 
     async create(userId: string, createDto: CreateRedemptionDto) {
         // Buscamos el premio y el usuario
+        console.log('DEBUG: Intentando buscar usuario con ID:', userId);
+
+        // Forzamos la conversión a ObjectId para asegurar la búsqueda
+        const user = await this.usersService.findOne(new Types.ObjectId(userId).toString());
+
+        if (!user) {
+            // Si entra aquí, imprimimos qué devolvió el servicio
+            console.log('DEBUG: El servicio de usuarios devolvió NULL');
+            throw new NotFoundException('Usuario no encontrado');
+        }
         // Nota: Asegúrate de que findOne en RewardsService devuelva un objeto con puntos y stock
         const reward = await this.rewardsService.findOne(createDto.rewardId);
-        const user = await this.usersService.findOne(userId);
+        console.log("datos de user", user)
+
 
         if (!reward) throw new NotFoundException('Premio no encontrado');
         if (!user) throw new NotFoundException('Usuario no encontrado');
