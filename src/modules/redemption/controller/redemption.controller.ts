@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { RedemptionsService } from "../service/redemption.service";
 import { CreateRedemptionDto } from "../dto/create-redemption.dto";
@@ -57,5 +57,12 @@ export class RedemptionsController {
 
     validate(@Param('code') code: string) {
         return this.service.validateAndDeliver(code);
+    }
+
+
+    @Get() // 👈 Añade esto
+    @ApiOperation({ summary: 'Obtener todos los canjes' })
+    findAll() {
+        return this.service.findAll(); // Necesitarás crear este método en el Service
     }
 }

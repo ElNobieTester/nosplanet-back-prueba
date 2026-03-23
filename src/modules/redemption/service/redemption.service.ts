@@ -88,4 +88,13 @@ export class RedemptionsService {
 
         return redemption.save();
     }
+
+
+    async findAll() {
+        return this.redemptionModel.find()
+            .populate('userId', 'fullName email') // Traemos datos del usuario
+            .populate('rewardId', 'title imageUrl sponsor') // Traemos datos del premio
+            .sort({ createdAt: -1 })
+            .exec();
+    }
 }
