@@ -65,12 +65,21 @@ export class RedemptionsService {
     }
 
     async validateAndDeliver(code: string) {
+        // 1. Limpiamos el código que llega por parámetro
+        const cleanCode = code.trim().toUpperCase();
+        console.log(`DEBUG: Buscando código limpio: [${cleanCode}]`);
+
         const redemption = await this.redemptionModel.findOne({
-            redemptionCode: code,
+            redemptionCode: cleanCode, // Usamos el código limpio
             status: 'PENDING'
         }).populate('rewardId userId');
 
         if (!redemption) {
+            // Log extra para saber qué hay en la DB
+            const existButClosed = await this.redemptionModel.findOne({ redemptionCode: cleanCode });
+            if (existButClosed) {
+                console.log(`DEBUG: El código existe pero su estado es: ${existButClosed.status}`);
+            }
             throw new NotFoundException('El código es inválido, expiró o ya fue entregado');
         }
 
