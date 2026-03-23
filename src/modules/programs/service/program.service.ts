@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Program } from "../schema/program.schema";
@@ -17,16 +17,32 @@ export class ProgramsService {
     ) { }
 
     async findAll(user: any) {
-        // Si es ADMIN o es un Ciudadano normal, que vea todos los programas activos
+        const userId = user?.uid || user?.sub || user?._id;
+
+        // Si es ADMIN, CITIZEN o RECYCLER, ve todos los programas activos
         if (!user || user.role === 'ADMIN' || user.role === 'CITIZEN' || user.role === 'RECYCLER') {
             return this.programModel.find({ isActive: true }).exec();
         }
 
-        // Si es un MANAGER (Gestor), quizás solo quiere ver los suyos
+        // Si es un MANAGER o Coordinador, ve los suyos (activos) que coincidan con su ID
         return this.programModel.find({
-            managedBy: user.uid || user.sub || user._id,
-            isActive: true
+            isActive: true,
+            $or: [
+                { managedBy: userId },
+                { coordinatorList: userId }
+            ]
         }).exec();
+    }
+    async findAllPublic(): Promise<Program[]> {
+        return this.programModel
+            .find({
+                $or: [
+                    { isActive: true },
+                    { isActive: { $exists: false } }
+                ]
+            })
+            .sort({ createdAt: -1 })
+            .exec();
     }
 
     async findAllProgramType(type?: ProgramType): Promise<Program[]> {
@@ -34,22 +50,35 @@ export class ProgramsService {
         return this.programModel.find(filter).exec();
     }
 
-    async joinProgram(programId: string, userId: string) {
-        // 1. Verificamos que el programa exista
-        const program = await this.programModel.findById(programId);
-        if (!program) throw new NotFoundException('El programa no existe');
+    async joinProgram(programId: string, user: any) {
+        const userId = user.sub || user.uid || user._id;
 
-        // 2. Agregamos el ID del usuario al arreglo de participantes
-        // Usamos $addToSet para que sea una operación atómica y única
-        const updatedProgram = await this.programModel.findByIdAndUpdate(
+        const program = await this.programModel.findById(programId);
+        if (!program) throw new NotFoundException('Programa no encontrado');
+
+        // Usamos participantList para la validación (basado en la rama de Raul)
+        if (program.participantList?.includes(userId)) {
+            throw new BadRequestException('Ya estás participando en este programa');
+        }
+
+        // 1. Actualizamos el Programa: Agregamos al usuario y subimos el contador
+        await this.programModel.findByIdAndUpdate(
             programId,
-            { $addToSet: { participantsObj: userId } }, // 'participants' debe estar en tu Schema
+            {
+                $addToSet: { participantList: userId }, // Evita duplicados a nivel DB
+                $inc: { participants: 1 }               // Incrementa el contador numérico
+            },
             { new: true }
         ).exec();
 
+        // 2. Actualizamos al Usuario: Le agregamos el programa a su perfil
+        await this.usersService.update(userId, {
+            $addToSet: { programsParticipating: programId }
+        } as any);
+
         return {
-            message: '¡Te has unido al programa con éxito! 🌿',
-            program: updatedProgram
+            message: 'Te has unido al programa exitosamente',
+            programId
         };
     }
 
@@ -107,4 +136,6 @@ export class ProgramsService {
         }
         return program;
     }
+
+
 }

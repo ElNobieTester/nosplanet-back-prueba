@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsNumber, IsArray } from 'class-validator';
 import { UserRole } from '../enum/userRole.enum'; // Asegúrate de tener este enum
 
 export class CreateUserDto {
@@ -75,4 +75,22 @@ export class CreateUserDto {
     @IsOptional()
     @IsString()
     institution?: string;
+
+    @ApiProperty({
+        example: '507f1f77bcf86cd799439011',
+        description: 'Manager ID for Coordinators',
+        required: false
+    })
+    @IsOptional()
+    @IsString()
+    managerId?: string;
+
+    @ApiProperty({
+        example: ['507f1f77bcf86cd799439011'],
+        description: 'Programs for Coordinators',
+        required: false
+    })
+    @IsOptional()
+    @IsArray()
+    programs?: string[];
 }

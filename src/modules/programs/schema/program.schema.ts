@@ -6,10 +6,10 @@ export type ProgramDocument = Program & Document;
 
 @Schema({ _id: false }) // Sub-esquema para el contacto (no necesita ID propio)
 class ContactInfo {
-    @Prop({ required: true })
+    @Prop({ required: false })
     email: string;
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     phone: string;
 
     @Prop({ required: false })
@@ -69,8 +69,17 @@ export class Program {
     @Prop({ required: false, default: 'PROYECTO' })
     category: string;
 
-    @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
-    participantsObj: Types.ObjectId[];
+    @Prop({ type: String, default: '' })
+    indications: string;
+
+    @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
+    participantList: string[];
+
+    @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
+    attendedList: string[];
+
+    @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
+    coordinatorList: string[];
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program);

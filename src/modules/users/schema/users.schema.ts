@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+
 import { Transform } from 'class-transformer';
+import { HydratedDocument, Types } from 'mongoose';
 import { UserRole } from '../enum/userRole.enum';
 
 export type UserDocument = HydratedDocument<User>;
@@ -67,6 +68,12 @@ export class User {
 
     @Prop({ type: [String], default: [] })
     completedInductions: string[];
+
+    @Prop({ default: false })
+    needsPasswordChange: boolean;
+
+    @Prop({ type: [{ type: String, ref: 'Program' }], default: [] })
+    programsParticipating: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

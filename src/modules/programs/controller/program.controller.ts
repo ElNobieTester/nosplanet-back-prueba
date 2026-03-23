@@ -6,24 +6,36 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } 
 import { ProgramType } from "../enum/progra-type.enum";
 import { Program } from "../schema/program.schema";
 import { AuthGuard } from "@nestjs/passport";
+
 @ApiTags('Programs')
 @Controller('programs')
-@UseGuards(AuthGuard('jwt')) // ✅ Protege todas las rutas de este controlador
 @ApiBearerAuth()
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) { }
 
     // ==========================================
-    // 1. RUTAS DE LISTADO Y FILTROS
+    // 1. RUTAS PÚBLICAS (Sin protección para Landing)
+    // ==========================================
+
+    @Get('public') // ✅ Siempre arriba de las rutas con :id
+    @ApiOperation({ summary: 'Listar programas activos para landing (público)' })
+    async findPublic() {
+        return this.programsService.findAllPublic();
+    }
+
+    // ==========================================
+    // 2. RUTAS PROTEGIDAS (Requieren Login)
     // ==========================================
 
     @Get()
-    @ApiOperation({ summary: 'Listar todos los programas' })
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Listar todos los programas (según rol)' })
     async findAll(@Req() req) {
         return this.programsService.findAll(req.user);
     }
 
-    @Get('filter/:programType') // ✅ Las rutas específicas siempre arriba de :id
+    @Get('filter/:programType')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Listar todos los programas por tipo' })
     @ApiParam({ name: 'programType', enum: ProgramType })
     async findAllProgramType(@Param('programType') programType: ProgramType) {
@@ -31,48 +43,53 @@ export class ProgramsController {
     }
 
     // ==========================================
-    // 2. ACCIONES DEL USUARIO (Join / Leave)
+    // 3. ACCIONES DEL USUARIO (Join / Leave)
     // ==========================================
 
-    @Post(':id/join')
-    @ApiOperation({ summary: 'Unirse a un programa' })
+    @Post(':id/join') // ✅ Unificamos la ruta de Raul y la tuya aquí
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Unirse a un programa ambiental' })
     async join(@Param('id') id: string, @Req() req) {
-        // Usamos una extracción segura del ID según tu estrategia JWT
-        const userId = req.user.sub || req.user.userId || req.user.id;
-        return this.programsService.joinProgram(id, userId);
+        // Usamos la extracción segura de ID que ya teníamos
+        return this.programsService.joinProgram(id, req.user);
     }
 
     @Delete(':id/leave')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Salir de un programa' })
     async leave(@Param('id') id: string, @Req() req) {
-        const userId = req.user.sub || req.user.userId || req.user.id;
-        return this.programsService.leaveProgram(id, userId);
+        return this.programsService.leaveProgram(id, req.user);
     }
 
     // ==========================================
-    // 3. GESTIÓN DE PROGRAMAS (CRUD)
+    // 4. GESTIÓN (CRUD)
     // ==========================================
 
     @Post()
-    @ApiOperation({ summary: 'Crear un nuevo programa ambiental' })
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Crear un nuevo programa' })
+    @ApiBody({ type: CreateProgramDto })
     @ApiResponse({ status: 201, type: Program })
     async create(@Body() createProgramDto: CreateProgramDto, @Req() req) {
         return this.programsService.create(createProgramDto, req.user);
     }
 
     @Patch(':id')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Actualizar un programa' })
     async update(@Param('id') id: string, @Body() program: UpdateProgramDto) {
         return this.programsService.update(id, program);
     }
 
     @Delete(':id')
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Eliminar un programa' })
     async delete(@Param('id') id: string) {
         return this.programsService.remove(id);
     }
 
-    @Get(':id') // ❌ El parámetro genérico :id SIEMPRE al final
+    @Get(':id') // ❌ El parámetro genérico :id SIEMPRE al final de los @Get
+    @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Obtener detalle de un programa' })
     findOne(@Param('id') id: string) {
         return this.programsService.findOne(id);

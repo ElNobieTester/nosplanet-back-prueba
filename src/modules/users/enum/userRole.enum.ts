@@ -5,5 +5,6 @@ export enum UserRole {
     RECYCLER = 'RECYCLER', // Reciclador
     BUSINESS = 'BUSINESS',
     USER = 'USER',
-    VOLUNTEER = 'VOLUNTEER'
+    VOLUNTEER = 'VOLUNTEER',
+    COORDINATOR = 'COORDINATOR'
 }
