@@ -4,6 +4,15 @@ import { ProgramType } from '../enum/progra-type.enum';
 
 export type ProgramDocument = Program & Document;
 
+@Schema({ _id: false })
+class LogEntry {
+    @Prop({ type: String, ref: 'User' })
+    userId: string;
+
+    @Prop({ default: Date.now })
+    at: Date;
+}
+
 @Schema({ _id: false }) // Sub-esquema para el contacto (no necesita ID propio)
 class ContactInfo {
     @Prop({ required: false })
@@ -72,11 +81,11 @@ export class Program {
     @Prop({ type: String, default: '' })
     indications: string;
 
-    @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
-    participantList: string[];
+    @Prop({ type: [LogEntry], default: [] })
+    participantList: LogEntry[];
 
-    @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
-    attendedList: string[];
+    @Prop({ type: [LogEntry], default: [] })
+    attendedList: LogEntry[];
 
     @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
     coordinatorList: string[];

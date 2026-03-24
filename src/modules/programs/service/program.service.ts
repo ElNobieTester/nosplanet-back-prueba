@@ -57,14 +57,14 @@ export class ProgramsService {
         if (!program) throw new NotFoundException('Programa no encontrado');
 
         // ✅ CORRECCIÓN: Usa participantList (como está en tu Schema)
-        if (program.participantList?.includes(userId)) {
+        if (program.participantList?.some(p => p.userId === userId)) {
             throw new BadRequestException('Ya estás participando en este programa');
         }
 
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
             {
-                $addToSet: { participantList: userId }, // ✅ Nombre correcto
+                $addToSet: { participantList: { userId, at: new Date() } }, // ✅ Con fecha
                 $inc: { participants: 1 }
             },
             { new: true }
@@ -82,7 +82,7 @@ export class ProgramsService {
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
             {
-                $pull: { participantList: userId }, // ✅ Nombre correcto
+                $pull: { participantList: { userId: userId } }, // ✅ Borra el objeto
                 $inc: { participants: -1 }
             },
             { new: true }

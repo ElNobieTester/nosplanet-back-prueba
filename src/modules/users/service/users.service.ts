@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from '../schema/users.schema';
 import { AccountManager, AccountManagerDocument } from '../schema/account-manager.schema';
 import { EcoParticipant, EcoParticipantDocument } from '../schema/eco-participant.schema';
-import { Coordinator, CoordinatorDocument } from '../../coordinators/schemas/coordinator.schema';
+import { Coordinator, CoordinatorDocument } from '../schema/coordinator.schema';
 import { CreateUserDto } from '../dto/users.dto';
 import { CloudinaryService } from 'src/common/cloudinary.service';
 import { UserRole } from '../enum/userRole.enum';
@@ -151,7 +151,7 @@ export class UsersService {
         return { message: 'Avatar actualizado correctamente', avatarUrl: updatedUser.avatarUrl };
     }
 
-    async updateProfile(userId: string, data: { fullName?: string; phone?: string }) {
+    async updateProfile(userId: string, data: { fullName?: string; phone?: string; avatarUrl?: string }) {
         const updatedUser = await this.userModel.findByIdAndUpdate(userId, { ...data }, { new: true });
         if (!updatedUser) throw new NotFoundException('Usuario no encontrado');
         return updatedUser;

@@ -38,9 +38,9 @@ export class ForumController {
         const userId = this.getUserId(req);
         if (!userId) throw new UnauthorizedException('Usuario no identificado');
 
-        let imageUrl = null;
+        let imageUrl = createPostDto.image || null;
 
-        // Si el usuario subió una imagen, la mandamos a Cloudinary
+        // Si el usuario subió una imagen (Multer), la mandamos a Cloudinary
         if (file) {
             const imageResult = await this.cloudinaryService.uploadFile(file);
             imageUrl = imageResult.secure_url;

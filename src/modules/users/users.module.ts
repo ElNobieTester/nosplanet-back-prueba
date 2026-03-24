@@ -6,7 +6,7 @@ import { User, UserSchema } from './schema/users.schema';
 import { AccountManager, AccountManagerSchema } from './schema/account-manager.schema';
 import { EcoParticipant, EcoParticipantSchema } from './schema/eco-participant.schema';
 import { CloudinaryModule } from 'src/common/cloudinary.module';
-import { Coordinator, CoordinatorSchema } from '../coordinators/schemas/coordinator.schema';
+import { Coordinator, CoordinatorSchema } from './schema/coordinator.schema';
 
 @Module({
     imports: [

@@ -112,15 +112,12 @@ export class CreateProgramDto {
     @IsString({ each: true })
     coordinatorList?: string[];
 
-    @ApiProperty({ example: ['id_user_1'], description: 'Lista de participantes' })
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
-    participantList?: string[];
+    participantList?: any[];
 
-    @ApiProperty({ example: ['id_user_1'], description: 'Lista de asistentes' })
+    @ApiProperty({ example: ['id_user_1', { userId: 'id_user_1', at: '2023-10-01' }], description: 'Lista de asistentes' })
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
-    attendedList?: string[];
+    attendedList?: any[];
 }

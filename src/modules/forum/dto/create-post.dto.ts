@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, Length } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, Length, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ForumCategory } from '../enum/forum-category.enum';
 
@@ -22,4 +22,8 @@ export class CreatePostDto {
     @IsEnum(ForumCategory)
     category: ForumCategory;
 
+    @ApiProperty({ example: 'https://...', description: 'URL de la imagen (opcional)' })
+    @IsString()
+    @IsOptional()
+    image?: string;
 }
