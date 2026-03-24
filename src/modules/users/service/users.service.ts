@@ -80,8 +80,20 @@ export class UsersService {
     }
 
     async findOne(id: string): Promise<any | null> {
-        const user = await this.userModel.findById(id).lean().exec();
-        if (!user) return null;
+        // 1. Validar que el string sea un ObjectId válido de Mongo
+        if (!Types.ObjectId.isValid(id)) {
+            console.error(`DEBUG: El ID [${id}] no tiene un formato de ObjectId válido.`);
+            return null;
+        }
+
+        // 2. Intentar buscar forzando el casting a ObjectId
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(id) }).lean().exec();
+
+        if (!user) {
+            // Si sale este log, es 100% seguro que el usuario NO existe en esta base de datos
+            console.warn(`DEBUG: El usuario con ID ${id} NO existe en la base de datos actual.`);
+            return null;
+        }
 
         const profile = await this.getProfileForUser(id, user.role as UserRole);
         return { ...user, profile };
@@ -187,5 +199,20 @@ export class UsersService {
             ...user,
             profile // Aquí vendrán los current_points actualizados
         };
+    }
+
+    async updatePoints(userId: string, points: number) {
+        // Usamos $inc: si points es -50, restará; si es 50, sumará.
+        const updatedProfile = await this.participantModel.findOneAndUpdate(
+            { user: new Types.ObjectId(userId) },
+            { $inc: { current_points: points } },
+            { new: true }
+        ).exec();
+
+        if (!updatedProfile) {
+            throw new NotFoundException('No se encontró un perfil de participante para este usuario');
+        }
+
+        return updatedProfile;
     }
 }

@@ -46,4 +46,19 @@ export class RewardsService {
         if (!deletedReward) throw new NotFoundException(`Reward #${id} not found`);
         return deletedReward;
     }
+
+    async updateStock(rewardId: string, quantity: number) {
+        // quantity será -1 cuando alguien canjea un premio
+        const updatedReward = await this.rewardModel.findByIdAndUpdate(
+            rewardId,
+            { $inc: { stock: quantity } },
+            { new: true }
+        ).exec();
+
+        if (!updatedReward) {
+            throw new NotFoundException(`Premio con ID ${rewardId} no encontrado`);
+        }
+
+        return updatedReward;
+    }
 }
