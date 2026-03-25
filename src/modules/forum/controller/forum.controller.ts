@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ForumService } from '../service/forum.service';
-import { CloudinaryService } from 'src/common/cloudinary.service'; // ☁️ Asegúrate que la ruta sea correcta
+import { FirebaseService } from 'src/common/firebase.service'; // 🔥 Cambiado a Firebase
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,7 +17,7 @@ import { CreateCommentDto } from '../dto/create-commet.dto';
 export class ForumController {
     constructor(
         private readonly forumService: ForumService,
-        private readonly cloudinaryService: CloudinaryService // 🚀 Inyectamos el servicio
+        private readonly firebaseService: FirebaseService // 🚀 Inyectamos Firebase
     ) { }
 
     // Función auxiliar para obtener el ID de forma robusta (como en Requests)
@@ -40,10 +40,10 @@ export class ForumController {
 
         let imageUrl = createPostDto.image || null;
 
-        // Si el usuario subió una imagen (Multer), la mandamos a Cloudinary
+        // Si el usuario subió una imagen (Multer), la mandamos a Firebase
         if (file) {
-            const imageResult = await this.cloudinaryService.uploadFile(file);
-            imageUrl = imageResult.secure_url;
+            const imageResult = await this.firebaseService.uploadFile(file, 'forum');
+            imageUrl = imageResult.url;
         }
 
         // Enviamos todo al servicio

@@ -7,14 +7,17 @@ import { UpdateProgramDto } from "../dto/update-program.dto";
 import { CreateProgramDto } from "../dto/create-program.dto";
 import { ProgramType } from "../enum/progra-type.enum";
 import { UsersService } from "../../users/service/users.service";
+import { FirebaseService } from "src/common/firebase.service";
 
 
 @Injectable()
 export class ProgramsService {
     constructor(
         @InjectModel(Program.name) private programModel: Model<ProgramDocument>,
-        private usersService: UsersService
+        private usersService: UsersService,
+        private firebaseService: FirebaseService
     ) { }
+
 
     async findAll(user: any) {
         const userId = user?.uid || user?.sub || user?._id;
@@ -104,15 +107,26 @@ export class ProgramsService {
         return createdProgram.save();
     }
     async update(id: string, updateProgramDto: UpdateProgramDto): Promise<Program> {
-        const updatedProgram = await this.programModel
-            .findByIdAndUpdate(id, updateProgramDto, { new: true }) // new: true devuelve el objeto ya actualizado
-            .exec();
-
-        if (!updatedProgram) {
+        // 1. Buscar el programa actual
+        const currentProgram = await this.programModel.findById(id).exec();
+        if (!currentProgram) {
             throw new NotFoundException(`Programa con ID ${id} no encontrado`);
         }
+
+        // 2. Si hay nueva imagen y ya había una vieja diferente, borrar la vieja
+        if (updateProgramDto.imageUrl && currentProgram.imageUrl && updateProgramDto.imageUrl !== currentProgram.imageUrl) {
+            await this.firebaseService.deleteFile(currentProgram.imageUrl);
+        }
+
+        // 3. Actualizar
+        const updatedProgram = await this.programModel
+            .findByIdAndUpdate(id, updateProgramDto, { new: true })
+            .exec();
+
+        if (!updatedProgram) throw new NotFoundException(`Error actualizando programa ${id}`);
         return updatedProgram;
     }
+
 
     async remove(id: string): Promise<Program> {
         const deletedProgram = await this.programModel

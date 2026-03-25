@@ -5,7 +5,7 @@ import { UsersController } from './controller/users.controller';
 import { User, UserSchema } from './schema/users.schema';
 import { AccountManager, AccountManagerSchema } from './schema/account-manager.schema';
 import { EcoParticipant, EcoParticipantSchema } from './schema/eco-participant.schema';
-import { CloudinaryModule } from 'src/common/cloudinary.module';
+
 import { Coordinator, CoordinatorSchema } from './schema/coordinator.schema';
 
 @Module({
@@ -15,8 +15,7 @@ import { Coordinator, CoordinatorSchema } from './schema/coordinator.schema';
             { name: AccountManager.name, schema: AccountManagerSchema },
             { name: EcoParticipant.name, schema: EcoParticipantSchema },
             { name: Coordinator.name, schema: CoordinatorSchema }
-        ]),
-        CloudinaryModule
+        ])
     ],
 
     controllers: [UsersController],

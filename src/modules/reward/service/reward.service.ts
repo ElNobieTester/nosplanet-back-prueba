@@ -5,12 +5,15 @@ import { Reward, RewardDocument } from '../schema/reward.schema';
 import { CreateRewardDto } from '../dto/create-reward.dto';
 import { UpdateRewardDto } from '../dto/update-reward.dto';
 import { RewardCategory } from '../enum/reward-category.enum';
+import { FirebaseService } from 'src/common/firebase.service';
 
 @Injectable()
 export class RewardsService {
     constructor(
         @InjectModel(Reward.name) private rewardModel: Model<RewardDocument>,
+        private firebaseService: FirebaseService,
     ) { }
+
 
     async create(createRewardDto: CreateRewardDto): Promise<Reward> {
         const createdReward = new this.rewardModel(createRewardDto);
@@ -32,12 +35,25 @@ export class RewardsService {
     }
 
     async update(id: string, updateRewardDto: UpdateRewardDto): Promise<Reward> {
+        // 1. Buscar el premio actual para ver si ya tiene una foto
+        const currentReward = await this.rewardModel.findById(id).exec();
+        if (!currentReward) throw new NotFoundException(`Reward #${id} not found`);
+
+        // 2. Si se está enviando una nueva imagen y ya había una anterior, borrar la vieja de Firebase
+        if (updateRewardDto.imageUrl && currentReward.imageUrl && updateRewardDto.imageUrl !== currentReward.imageUrl) {
+            await this.firebaseService.deleteFile(currentReward.imageUrl);
+        }
+
+        // 3. Proceder con el update normal
         const updatedReward = await this.rewardModel
             .findByIdAndUpdate(id, updateRewardDto, { new: true })
             .exec();
+
         if (!updatedReward) throw new NotFoundException(`Reward #${id} not found`);
         return updatedReward;
     }
+
+
 
     async remove(id: string): Promise<Reward> {
         const deletedReward = await this.rewardModel

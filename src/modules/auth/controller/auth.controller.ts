@@ -30,10 +30,14 @@ import {
     ApiConsumes,
 } from '@nestjs/swagger';
 import { LoginUserDto } from 'src/modules/users/dto/login-user.dto';
+import { EmailService } from '../../../common/email.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly emailService: EmailService,
+    ) { }
 
     // 1. Iniciar Login: El usuario toca el botón "Google" en la App
     @Get('google')
@@ -115,5 +119,28 @@ export class AuthController {
     @Get('check-status')
     async checkAuthStatus(@Req() req) {
         return this.authService.checkAuthStatus(req.user);
+    }
+
+    /** 
+     * ENDPOINTS DE SEGURIDAD (OTP Y SUSPENSIÓN)
+     * Centralizados en el backend para eliminar dependencias externas en el cliente.
+     */
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('send-otp')
+    async sendOTP(@Body() body: { email: string, name: string, otp: string }) {
+        if (!body.email || !body.otp) {
+            throw new Error('Email y OTP son obligatorios');
+        }
+        return this.emailService.sendOTPEmail(body.email, body.name, body.otp);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('send-suspension')
+    async sendSuspension(@Body() body: { email: string, name: string, suspensionDate: string }) {
+        if (!body.email || !body.name) {
+            throw new Error('Email y Nombre son obligatorios');
+        }
+        return this.emailService.sendSuspensionEmail(body.email, body.name, new Date(body.suspensionDate));
     }
 }

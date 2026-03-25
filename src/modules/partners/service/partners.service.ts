@@ -5,12 +5,15 @@ import { Model } from 'mongoose';
 import { Partner, PartnerDocument } from '../schema/partner.schema';
 import { CreatePartnerDto } from '../dto/create-partner.dto';
 import { UpdatePartnerDto } from '../dto/update-partner.dto';
+import { FirebaseService } from 'src/common/firebase.service';
 
 @Injectable()
 export class PartnersService {
     constructor(
         @InjectModel(Partner.name) private partnerModel: Model<PartnerDocument>,
+        private firebaseService: FirebaseService,
     ) { }
+
 
     async create(createPartnerDto: CreatePartnerDto): Promise<Partner> {
         const createdPartner = new this.partnerModel(createPartnerDto);
@@ -50,22 +53,36 @@ export class PartnersService {
     }
 
     async update(id: string, updatePartnerDto: UpdatePartnerDto): Promise<Partner> {
+        // 1. Buscar el socio actual
+        const currentPartner = await this.partnerModel.findById(id).exec();
+        if (!currentPartner) throw new NotFoundException(`Partner with ID ${id} not found`);
+
+        // 2. Si se está enviando un nuevo logo y es diferente al anterior, borrar la previa
+        if (updatePartnerDto.logo && currentPartner.logo && updatePartnerDto.logo !== currentPartner.logo) {
+            await this.firebaseService.deleteFile(currentPartner.logo);
+        }
+
+        // 3. Ejecutar update
         const updatedPartner = await this.partnerModel
             .findByIdAndUpdate(id, updatePartnerDto, { new: true })
             .exec();
-        if (!updatedPartner) {
-            throw new NotFoundException(`Partner with ID ${id} not found`);
-        }
+
+        if (!updatedPartner) throw new NotFoundException(`Error updating partner ${id}`);
         return updatedPartner;
     }
 
     async remove(id: string): Promise<Partner> {
-        const deletedPartner = await this.partnerModel
-            .findByIdAndDelete(id)
-            .exec();
-        if (!deletedPartner) {
-            throw new NotFoundException(`Partner with ID ${id} not found`);
+        const partner = await this.partnerModel.findById(id).exec();
+        if (!partner) throw new NotFoundException(`Partner with ID ${id} not found`);
+
+        // 🗑️ Borramos el logo de Firebase si existe
+        if (partner.logo) {
+            await this.firebaseService.deleteFile(partner.logo);
         }
+
+        const deletedPartner = await this.partnerModel.findByIdAndDelete(id).exec();
+        if (!deletedPartner) throw new NotFoundException(`Error removing partner ${id}`);
         return deletedPartner;
     }
+
 }

@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UploadController } from './common/upload.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config'; // <--- 1. IMPORTANTE: Importar esto
-import { CloudinaryModule } from './common/cloudinary.module';
+
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 
@@ -19,6 +20,8 @@ import { DonationsModule } from './donations/donations.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { CoordinatorsModule } from './modules/coordinators/coordinators.module';
 import { RedemptionsModule } from './modules/redemption/redemption.module';
+import { EmailModule } from './common/email.module';
+import { FirebaseModule } from './common/firebase.module';
 
 @Module({
   imports: [
@@ -29,7 +32,8 @@ import { RedemptionsModule } from './modules/redemption/redemption.module';
 
     // Ahora sí leerá process.env.MONGO_URI correctamente del archivo .env
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/NosPlanetInfo'),
-    CloudinaryModule,
+    EmailModule,
+    FirebaseModule,
     UsersModule,
     AuthModule,
     RedemptionsModule,
@@ -45,7 +49,7 @@ import { RedemptionsModule } from './modules/redemption/redemption.module';
     DonationsModule,
     ContactModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, UploadController],
   providers: [AppService],
 })
 export class AppModule { }

@@ -17,7 +17,7 @@ import { RequestsService } from '../service/request.service';
 import { AuthGuard } from '@nestjs/passport';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { CloudinaryService } from 'src/common/cloudinary.service';
+import { FirebaseService } from 'src/common/firebase.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('requests')
@@ -25,7 +25,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth()
 export class RequestsController {
     constructor(
-        private readonly cloudinaryService: CloudinaryService,
+        private readonly firebaseService: FirebaseService,
         private readonly requestsService: RequestsService) { }
 
     // Función auxiliar interna para obtener el ID de forma robusta
@@ -47,14 +47,14 @@ export class RequestsController {
     async create(@Req() req, @Body() body: any, @UploadedFile() file: Express.Multer.File) {
         if (!file) throw new BadRequestException('La evidencia (foto) es obligatoria');
 
-        const imageResult = await this.cloudinaryService.uploadFile(file);
+        const imageResult = await this.firebaseService.uploadFile(file, 'requests');
         const userId = this.getUserId(req);
 
         if (!userId) throw new BadRequestException('Usuario no identificado');
 
         return this.requestsService.create(userId, {
             ...body,
-            imageUrl: imageResult.secure_url
+            imageUrl: imageResult.url
         });
     }
 
@@ -95,14 +95,14 @@ export class RequestsController {
     ) {
         if (!file) throw new BadRequestException('La foto de evidencia es obligatoria para finalizar.');
 
-        // 1. Subir la foto a Cloudinary
-        const imageResult = await this.cloudinaryService.uploadFile(file);
+        // 1. Subir la foto a Firebase
+        const imageResult = await this.firebaseService.uploadFile(file, 'requests/evidence');
 
         // 2. Usar tu función auxiliar para obtener el ID de forma robusta
         const collectorId = this.getUserId(req);
 
         // 3. Llamar al servicio
-        return this.requestsService.completeRequest(id, collectorId, imageResult.secure_url);
+        return this.requestsService.completeRequest(id, collectorId, imageResult.url);
     }
 
     // Mantienes tu upload local si lo usas para pruebas temporales
