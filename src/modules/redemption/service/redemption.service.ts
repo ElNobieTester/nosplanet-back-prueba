@@ -90,19 +90,19 @@ export class RedemptionsService {
     }
 
     async findMyRedemptions(userId: string) {
-        // 1. Filtramos los canjes donde userId sea igual al id del usuario autenticado
-        const redemptions = await this.redemptionModel.find({ userId })
-            .populate('rewardId', 'title imageUrl sponsor points') // Traemos info del premio
-            .sort({ createdAt: -1 }) // Los más recientes primero
+        console.log('DEBUG BACKEND: Buscando canjes para el ID:', userId);
+
+        // 🚀 IMPORTANTE: Convertimos el string a ObjectId para que Mongo lo encuentre
+        const redemptions = await this.redemptionModel.find({
+            userId: new Types.ObjectId(userId)
+        })
+            .populate('rewardId', 'title imageUrl sponsor points')
+            .sort({ createdAt: -1 })
             .lean()
             .exec();
 
-        // 2. Mapeamos para devolver la data limpia
-        return redemptions.map(redemption => ({
-            ...redemption,
-            // Si necesitas el perfil del usuario aquí podrías hacer el findOne, 
-            // pero para el historial de la app móvil, con la info del premio suele bastar.
-        }));
+        console.log(`DEBUG BACKEND: Se encontraron ${redemptions.length} canjes.`);
+        return redemptions;
     }
 
 
