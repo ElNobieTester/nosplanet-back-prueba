@@ -89,6 +89,22 @@ export class RedemptionsService {
         return redemption.save();
     }
 
+    async findMyRedemptions(userId: string) {
+        // 1. Filtramos los canjes donde userId sea igual al id del usuario autenticado
+        const redemptions = await this.redemptionModel.find({ userId })
+            .populate('rewardId', 'title imageUrl sponsor points') // Traemos info del premio
+            .sort({ createdAt: -1 }) // Los más recientes primero
+            .lean()
+            .exec();
+
+        // 2. Mapeamos para devolver la data limpia
+        return redemptions.map(redemption => ({
+            ...redemption,
+            // Si necesitas el perfil del usuario aquí podrías hacer el findOne, 
+            // pero para el historial de la app móvil, con la info del premio suele bastar.
+        }));
+    }
+
 
     async findAll() {
         // 1. Obtenemos los canjes base (sin populate en userId para no duplicar trabajo)

@@ -60,6 +60,16 @@ export class RedemptionsController {
     }
 
 
+    @Get('my-redemptions') // 🚀 Nueva ruta específica para el historial personal
+    @ApiOperation({ summary: 'Obtener el historial de canjes del usuario autenticado' })
+    @ApiResponse({ status: 200, description: 'Lista de canjes devuelta con éxito.' })
+    findMyRedemptions(@Req() req) {
+        // Extraemos el sub (ID del usuario) que el AuthGuard inyectó en el token
+        const userId = req.user.sub;
+        return this.service.findMyRedemptions(userId);
+    }
+
+
     @Get() // 👈 Añade esto
     @ApiOperation({ summary: 'Obtener todos los canjes' })
     findAll() {
@@ -72,4 +82,10 @@ export class RedemptionsController {
     findByCode(@Param('code') code: string) {
         return this.service.findByCode(code);
     }
+
+
+
+
 }
+
+
