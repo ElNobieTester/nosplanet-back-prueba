@@ -5,7 +5,7 @@ import { DonationsService } from './donations.service';
 import { Donation, DonationSchema } from './schema/donation.schema';
 import { User, UserSchema } from '../modules/users/schema/users.schema';
 import { EcoParticipant, EcoParticipantSchema } from '../modules/users/schema/eco-participant.schema';
-import { EmailService } from '../common/email.service';
+
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { EmailService } from '../common/email.service';
     ]),
   ],
   controllers: [DonationsController],
-  providers: [DonationsService, EmailService],
+  providers: [DonationsService],
   exports: [DonationsService],
 })
 export class DonationsModule { }

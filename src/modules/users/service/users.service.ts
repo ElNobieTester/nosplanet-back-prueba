@@ -8,7 +8,7 @@ import { AccountManager, AccountManagerDocument } from '../schema/account-manage
 import { EcoParticipant, EcoParticipantDocument } from '../schema/eco-participant.schema';
 import { Coordinator, CoordinatorDocument } from '../schema/coordinator.schema';
 import { CreateUserDto } from '../dto/users.dto';
-import { CloudinaryService } from 'src/common/cloudinary.service';
+import { FirebaseService } from 'src/common/firebase.service';
 import { UserRole } from '../enum/userRole.enum';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class UsersService {
         @InjectModel(AccountManager.name) private managerModel: Model<AccountManagerDocument>,
         @InjectModel(EcoParticipant.name) private participantModel: Model<EcoParticipantDocument>,
         @InjectModel(Coordinator.name) private coordinatorModel: Model<CoordinatorDocument>,
-        private cloudinaryService: CloudinaryService
+        private firebaseService: FirebaseService
     ) { }
 
     async create(createUserDto: CreateUserDto): Promise<UserDocument> {
@@ -138,10 +138,17 @@ export class UsersService {
     }
 
     async remove(id: string): Promise<UserDocument | null> {
-        // También deberíamos borrar los perfiles (Soft delete o cascada)
+        // A. Buscar el usuario antes de borrarlo para obtener su avatarUrl
+        const user = await this.userModel.findById(id);
+        if (user && user.avatarUrl) {
+            await this.firebaseService.deleteFile(user.avatarUrl);
+        }
+
+        // B. Borrar perfiles (Soft delete o cascada)
         await this.managerModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
         await this.participantModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
         await this.coordinatorModel.findOneAndDelete({ user: new Types.ObjectId(id) }).exec();
+
         return this.userModel.findByIdAndDelete(id).exec();
     }
 
@@ -153,12 +160,23 @@ export class UsersService {
         if (!file) {
             throw new BadRequestException('No se proporcionó ninguna imagen');
         }
-        const result = await this.cloudinaryService.uploadFile(file);
+
+        // 1. Obtener usuario actual para ver si ya tiene avatar
+        const currentUser = await this.userModel.findById(userId);
+        if (currentUser && currentUser.avatarUrl) {
+            // 🗑️ Borramos el avatar anterior para no dejar basura
+            await this.firebaseService.deleteFile(currentUser.avatarUrl);
+        }
+
+        // 2. Subir el nuevo a Firebase
+        const result = await this.firebaseService.uploadFile(file, 'avatars');
+
         const updatedUser = await this.userModel.findByIdAndUpdate(
             userId,
-            { avatarUrl: result.secure_url },
+            { avatarUrl: result.url },
             { new: true }
         );
+
         if (!updatedUser) throw new NotFoundException('Usuario no encontrado');
         return { message: 'Avatar actualizado correctamente', avatarUrl: updatedUser.avatarUrl };
     }

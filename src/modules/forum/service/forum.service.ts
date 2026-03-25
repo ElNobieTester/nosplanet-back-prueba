@@ -3,13 +3,16 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ForumPost } from '../schema/forum-post.schema';
 import { ForumComment } from '../schema/forum-comment.schema';
+import { FirebaseService } from 'src/common/firebase.service';
 
 @Injectable()
 export class ForumService {
     constructor(
         @InjectModel(ForumPost.name) private postModel: Model<ForumPost>,
         @InjectModel(ForumComment.name) private commentModel: Model<ForumComment>,
+        private firebaseService: FirebaseService,
     ) { }
+
 
     async create(createPostDto: any, userId: string) {
         // Destructuramos los datos que vienen del controller
@@ -107,6 +110,12 @@ export class ForumService {
             throw new UnauthorizedException('No tienes permiso para borrar este post');
         }
 
+        // 🗑️ BORRADO FÍSICO DE FIREBASE SI TIENE FOTO
+        if (post.imageUrl) {
+            await this.firebaseService.deleteFile(post.imageUrl);
+        }
+
         return this.postModel.findByIdAndDelete(postId);
     }
+
 }
