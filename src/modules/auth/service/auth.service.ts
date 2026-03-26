@@ -121,6 +121,8 @@ export class AuthService {
         institution: profile.institution || null,
         managerId: isCoordinator ? user.managerId : undefined,
         programs: isCoordinator ? user.programs : undefined,
+
+        programsParticipating: user.programsParticipating || [],
         gamification,
         membershipTier: profile.membershipTier || 'NONE',
         points: currentPoints,
