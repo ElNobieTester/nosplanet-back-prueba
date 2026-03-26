@@ -53,6 +53,9 @@ export class Partner {
 
     @Prop({ default: false })
     isLocked: boolean; // If true, requires editing before it can be visible
+
+    @Prop()
+    websiteUrl: string;
 }
 
 export const PartnerSchema = SchemaFactory.createForClass(Partner);

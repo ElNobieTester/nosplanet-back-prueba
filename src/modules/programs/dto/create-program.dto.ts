@@ -13,6 +13,23 @@ import {
 import { ProgramType } from '../enum/progra-type.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
+// 1. DTO Auxiliar para Ubicación (NUEVO)
+class LocationDto {
+    @ApiProperty({ example: 'Parque Central de Miraflores', description: 'Nombre físico o virtual del lugar' })
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @ApiProperty({
+        example: 'https://maps.app.goo.gl/xyz',
+        description: 'URL de Google Maps o enlace de reunión',
+        required: false
+    })
+    @IsOptional()
+    @IsUrl({}, { message: 'El formato de la URL de ubicación no es válido' })
+    mapUrl?: string;
+}
+
 // DTO Auxiliar para Contacto
 class ContactDto {
     @ApiProperty({ example: 'email@example.com', description: 'Email del contacto' })
@@ -42,26 +59,27 @@ export class CreateProgramDto {
     @IsNotEmpty()
     organization: string;
 
-    @ApiProperty({ example: 'ONG', description: 'Tipo de organizacion' })
+    @ApiProperty({ example: 'ONG', description: 'Tipo de organizacion', enum: ProgramType })
     @IsEnum(ProgramType, { message: 'El tipo debe ser ONG, ESTADO o NOS_PLANET' })
     organizationType: ProgramType;
 
     @IsNumber()
     @IsOptional()
-    @ApiProperty({ example: '100', description: 'Numero de participantes' })
+    @ApiProperty({ example: 100, description: 'Numero de participantes' })
     participants?: number;
 
-    @ApiProperty({ example: 'Lima', description: 'Ubicacion del programa' })
-    @IsString()
-    @IsNotEmpty()
-    location: string;
+    // --- CAMBIO AQUÍ: Ahora es un objeto validado ---
+    @ApiProperty({ type: LocationDto, description: 'Detalles de la ubicación' })
+    @ValidateNested()
+    @Type(() => LocationDto)
+    location: LocationDto;
 
     @ApiProperty({ example: '1 mes', description: 'Duracion del programa' })
     @IsString()
     @IsNotEmpty()
     duration: string;
 
-    @ApiProperty({ example: '10', description: 'Puntos del programa' })
+    @ApiProperty({ example: 10, description: 'Puntos del programa' })
     @IsNumber()
     @Min(0)
     points: number;
@@ -81,12 +99,12 @@ export class CreateProgramDto {
     @IsString({ each: true })
     activities: string[];
 
-    @ApiProperty({ example: 'email@example.com', description: 'Email del contacto' })
+    @ApiProperty({ type: ContactDto, description: 'Información de contacto' })
     @ValidateNested()
     @Type(() => ContactDto)
     contact: ContactDto;
 
-    @ApiProperty({ example: 'https://www.example.com', description: 'URL de la imagen del programa' })
+    @ApiProperty({ example: 'https://www.example.com/image.png', description: 'URL de la imagen' })
     @IsOptional()
     @IsString()
     imageUrl?: string;
@@ -116,7 +134,7 @@ export class CreateProgramDto {
     @IsArray()
     participantList?: any[];
 
-    @ApiProperty({ example: ['id_user_1', { userId: 'id_user_1', at: '2023-10-01' }], description: 'Lista de asistentes' })
+    @ApiProperty({ example: [], description: 'Lista de asistentes' })
     @IsOptional()
     @IsArray()
     attendedList?: any[];

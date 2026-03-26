@@ -61,4 +61,9 @@ export class CreatePartnerDto {
     @IsBoolean()
     @IsOptional()
     isLocked?: boolean;
+
+    @ApiProperty({ description: 'URL del sitio web', required: false })
+    @IsOptional()
+    @IsUrl()
+    websiteUrl?: string; // <--- NUEVO
 }

@@ -13,7 +13,16 @@ class LogEntry {
     at: Date;
 }
 
-@Schema({ _id: false }) // Sub-esquema para el contacto (no necesita ID propio)
+@Schema({ _id: false })
+class LocationInfo {
+    @Prop({ required: true, trim: true })
+    name: string; // Ej: "Parque Central de Miraflores" o "Aula Magna"
+
+    @Prop({ required: false })
+    mapUrl: string; // Ej: Link de Google Maps o link de Zoom
+}
+
+@Schema({ _id: false })
 class ContactInfo {
     @Prop({ required: false })
     email: string;
@@ -25,7 +34,7 @@ class ContactInfo {
     website: string;
 }
 
-@Schema({ timestamps: true }) // Agrega createdAt y updatedAt automáticamente
+@Schema({ timestamps: true })
 export class Program {
     @Prop({ required: true, trim: true })
     title: string;
@@ -39,16 +48,17 @@ export class Program {
     @Prop({ default: 0 })
     participants: number;
 
-    @Prop({ required: true })
-    location: string;
+    // --- CAMBIO: Ahora es de tipo LocationInfo ---
+    @Prop({ type: LocationInfo, required: true })
+    location: LocationInfo;
 
     @Prop({ required: true })
     duration: string;
 
     @Prop({ required: true, min: 0 })
-    points: number; // Puntos de gamificación
+    points: number;
 
-    @Prop({ required: false }) // Será la URL de Cloudinary
+    @Prop({ required: false })
     imageUrl: string;
 
     @Prop({ required: true })
@@ -90,5 +100,4 @@ export class Program {
     @Prop({ type: [{ type: String, ref: 'User' }], default: [] })
     coordinatorList: string[];
 }
-
 export const ProgramSchema = SchemaFactory.createForClass(Program);
