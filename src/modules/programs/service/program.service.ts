@@ -80,18 +80,34 @@ export class ProgramsService {
         return { message: '¡Unido con éxito!', program: updatedProgram };
     }
 
-    async leaveProgram(programId: string, userId: string) {
-        // ✅ CORRECCIÓN: Usa participantList
+    async leaveProgram(programId: string, user: any) {
+        // 1. Extraemos el ID real del objeto que viene del Request
+        // Según tu log, el campo correcto es 'sub'
+        const userId = user.sub || user.uid || user._id;
+
+        const program = await this.programModel.findById(programId);
+        if (!program) throw new NotFoundException('Programa no encontrado');
+
+        // 2. Quitamos al usuario de la lista del PROGRAMA
         const updatedProgram = await this.programModel.findByIdAndUpdate(
             programId,
             {
-                $pull: { participantList: { userId: userId } }, // ✅ Borra el objeto
+                $pull: { participantList: { userId: userId } }, // Ahora sí es un String
                 $inc: { participants: -1 }
             },
             { new: true }
         ).exec();
 
-        return { message: 'Has dejado el programa.', program: updatedProgram };
+        // 3. 🔥 CRÍTICO: También quitamos el programa de la lista del USUARIO
+        // para que el móvil sepa que ya no está inscrito
+        await this.usersService.update(userId, {
+            $pull: { programsParticipating: programId }
+        } as any);
+
+        return {
+            message: 'Has dejado el programa exitosamente.',
+            program: updatedProgram
+        };
     }
 
     async create(createProgramDto: CreateProgramDto, user: any): Promise<Program> {

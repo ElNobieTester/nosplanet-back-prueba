@@ -56,8 +56,8 @@ export class ProgramsController {
 
     @Delete(':id/leave')
     @UseGuards(AuthGuard('jwt'))
-    @ApiOperation({ summary: 'Salir de un programa' })
     async leave(@Param('id') id: string, @Req() req) {
+        // Pasamos req.user completo, el Service se encarga de limpiar el ID
         return this.programsService.leaveProgram(id, req.user);
     }
 
