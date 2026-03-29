@@ -23,9 +23,12 @@ export class ProgramsController {
         return this.programsService.findAllPublic();
     }
 
-    // ==========================================
-    // 2. RUTAS PROTEGIDAS (Requieren Login)
-    // ==========================================
+    @Get('popular')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Obtener los 5 programas más populares por número de participantes' })
+    async findPopular() {
+        return this.programsService.findPopular();
+    }
 
     @Get()
     @UseGuards(AuthGuard('jwt'))
@@ -42,9 +45,7 @@ export class ProgramsController {
         return this.programsService.findAllProgramType(programType);
     }
 
-    // ==========================================
-    // 3. ACCIONES DEL USUARIO (Join / Leave)
-    // ==========================================
+
 
     @Post(':id/join') // ✅ Unificamos la ruta de Raul y la tuya aquí
     @UseGuards(AuthGuard('jwt'))

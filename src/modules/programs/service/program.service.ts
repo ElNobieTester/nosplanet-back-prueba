@@ -36,6 +36,15 @@ export class ProgramsService {
             ]
         }).exec();
     }
+
+
+    async findPopular(): Promise<Program[]> {
+        return this.programModel
+            .find({ isActive: true })
+            .sort({ participants: -1 }) // -1 para descendente (más populares primero)
+            .limit(5)
+            .exec();
+    }
     async findAllPublic(): Promise<Program[]> {
         return this.programModel
             .find({
