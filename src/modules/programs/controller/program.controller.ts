@@ -13,10 +13,6 @@ import { AuthGuard } from "@nestjs/passport";
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) { }
 
-    // ==========================================
-    // 1. RUTAS PÚBLICAS (Sin protección para Landing)
-    // ==========================================
-
     @Get('public') // ✅ Siempre arriba de las rutas con :id
     @ApiOperation({ summary: 'Listar programas activos para landing (público)' })
     async findPublic() {
