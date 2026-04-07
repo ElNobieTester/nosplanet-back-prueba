@@ -1,14 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { Transform } from 'class-transformer';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 import { UserRole } from '../enum/userRole.enum';
 
 export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class User {
-    // --- DATOS DE IDENTIDAD (Comunes) ---
     @Prop({ required: true })
     fullName: string;
 
@@ -16,14 +14,19 @@ export class User {
     @Transform(({ value }) => value?.toLowerCase().trim())
     email: string;
 
-    @Prop({ default: 'local' }) // 'local' o 'google'
-    authProvider: string;
-
     @Prop({ enum: UserRole, default: UserRole.CITIZEN })
     role: string;
 
-    @Prop({ required: false })
+    // Ahora es requerido ya que no hay Google Auth
+    @Prop({ required: true })
     password?: string;
+
+    // --- UBICACIÓN PARA ANÁLISIS DE DATOS ---
+    @Prop({ required: true, index: true }) // index: true facilita el análisis posterior
+    department: string;
+
+    @Prop({ required: true, index: true })
+    district: string;
 
     @Prop({
         unique: true,
@@ -44,14 +47,6 @@ export class User {
     @Prop({ required: false })
     avatarUrl?: string;
 
-    @Prop({
-        unique: true,
-        sparse: true,
-        type: String,
-        set: (val: string) => (val === '' ? undefined : val)
-    })
-    googleId: string;
-
     // --- ESTADO DE CUENTA ---
     @Prop({ default: true })
     isActive: boolean;
@@ -59,12 +54,11 @@ export class User {
     @Prop({ type: String, default: null })
     resetPasswordToken: string | null;
 
-
     @Prop({ type: Date, default: null })
     resetPasswordExpires: Date | null;
 
     @Prop({ type: String, default: null })
-    pushToken: string; //
+    pushToken: string;
 
     @Prop({ type: [String], default: [] })
     completedInductions: string[];

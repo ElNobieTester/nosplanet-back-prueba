@@ -58,7 +58,6 @@ export class AuthService {
     try {
       const newUser = await this.usersService.create({
         ...userDto,
-        authProvider: userDto.authProvider || 'local',
         role: (userDto.role || UserRole.CITIZEN) as UserRole,
       });
 
@@ -74,7 +73,7 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(loginData.email);
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
-    if (!user.password) throw new UnauthorizedException('Inicia sesión con Google o usa tu contraseña asignada');
+
 
     const isMatch = await bcrypt.compare(loginData.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
@@ -82,25 +81,6 @@ export class AuthService {
     return this.generateJwt(user, user.role === UserRole.COORDINATOR);
   }
 
-  async validateGoogleUser(googleUser: any) {
-    const user = await this.usersService.findOneByEmail(googleUser.email);
-    if (user) return user;
-
-    try {
-      const newUser = await this.usersService.create({
-        email: googleUser.email,
-        fullName: `${googleUser.firstName} ${googleUser.lastName}`,
-        googleId: googleUser.googleId,
-        avatarUrl: googleUser.picture,
-        authProvider: 'google',
-        role: UserRole.CITIZEN,
-      });
-      this.emailService.sendWelcomeEmail(newUser.email, newUser.fullName);
-      return newUser;
-    } catch (error) {
-      throw new InternalServerErrorException('Error creando usuario de Google');
-    }
-  }
 
   async generateJwt(user: any, isCoordinator: boolean = false) {
     const profile = user.profile || {};
@@ -118,10 +98,12 @@ export class AuthService {
         fullName: user.fullName,
         avatar: user.avatarUrl,
         phone: user.phone,
+        department: user.department,
+        district: user.district,
+
         institution: profile.institution || null,
         managerId: isCoordinator ? user.managerId : undefined,
         programs: isCoordinator ? user.programs : undefined,
-
         programsParticipating: user.programsParticipating || [],
         gamification,
         membershipTier: profile.membershipTier || 'NONE',
