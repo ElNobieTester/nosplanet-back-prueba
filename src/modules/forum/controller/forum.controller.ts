@@ -92,4 +92,33 @@ export class ForumController {
         const userId = this.getUserId(req);
         return this.forumService.deletePost(id, userId);
     }
+
+    @Delete('comment/:commentId') // 🗑️ Nuevo: Eliminar comentario
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Eliminar un comentario específico' })
+    async deleteComment(@Param('commentId') commentId: string, @Request() req) {
+        const userId = this.getUserId(req);
+        return this.forumService.deleteComment(commentId, userId);
+    }
+
+    @Patch(':id') // 📝 Nuevo: Editar Post
+    @UseGuards(AuthGuard('jwt'))
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiOperation({ summary: 'Actualizar un post' })
+    async update(
+        @Param('id') id: string,
+        @Body() updatePostDto: Partial<CreatePostDto>,
+        @Request() req,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        const userId = this.getUserId(req);
+        let imageUrl = updatePostDto.image;
+
+        if (file) {
+            const imageResult = await this.firebaseService.uploadFile(file, 'forum');
+            imageUrl = imageResult.url;
+        }
+
+        return this.forumService.update(id, { ...updatePostDto, imageUrl }, userId);
+    }
 }

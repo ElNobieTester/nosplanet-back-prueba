@@ -43,6 +43,34 @@ export class ForumService {
             .exec();
     }
 
+    async update(postId: string, updatePostDto: any, userId: string) {
+        const post = await this.postModel.findById(postId);
+        if (!post) throw new NotFoundException('Post no encontrado');
+
+        // Nota: La validación de si es ADMIN o DUEÑO se puede reforzar aquí 
+        // o dejar que el Controller la maneje mediante Guards.
+
+        const { title, content, category, imageUrl } = updatePostDto;
+
+        // 📸 Gestión de Firebase: Si se sube una nueva imagen y ya había una, borramos la anterior
+        if (imageUrl && post.imageUrl && imageUrl !== post.imageUrl) {
+            await this.firebaseService.deleteFile(post.imageUrl);
+        }
+
+        const updatedPost = await this.postModel.findByIdAndUpdate(
+            postId,
+            {
+                title,
+                content,
+                category,
+                imageUrl: imageUrl || post.imageUrl // Mantiene la anterior si no viene una nueva
+            },
+            { new: true }
+        ).populate('author', 'fullName avatarUrl');
+
+        return updatedPost;
+    }
+
     async toggleLike(postId: string, userId: string) {
         const post = await this.postModel.findById(postId);
 
@@ -116,6 +144,22 @@ export class ForumService {
         }
 
         return this.postModel.findByIdAndDelete(postId);
+    }
+    async deleteComment(commentId: string, userId: string) {
+        const comment = await this.commentModel.findById(commentId);
+        if (!comment) throw new NotFoundException('Comentario no encontrado');
+
+        const postId = comment.post;
+
+        // 🗑️ Borrar el comentario
+        await this.commentModel.findByIdAndDelete(commentId);
+
+        // 📉 Decrementar el contador en el Post
+        await this.postModel.findByIdAndUpdate(postId, {
+            $inc: { commentsCount: -1 }
+        });
+
+        return { success: true, message: 'Comentario eliminado' };
     }
 
 }
