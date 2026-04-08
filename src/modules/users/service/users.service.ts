@@ -53,7 +53,7 @@ export class UsersService {
         }
 
         // Si es Citizen, Recycler o Business (Participantes del juego)
-        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS) {
+        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS || role === UserRole.STORE) {
             await new this.participantModel({
                 user: user._id
             }).save();
