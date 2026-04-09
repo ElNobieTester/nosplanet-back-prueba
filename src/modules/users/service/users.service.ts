@@ -53,7 +53,7 @@ export class UsersService {
         }
 
         // Si es Citizen, Recycler o Business (Participantes del juego)
-        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS || role === UserRole.STORE) {
+        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.STORE) {
             await new this.participantModel({
                 user: user._id
             }).save();
@@ -102,7 +102,7 @@ export class UsersService {
     private async getProfileForUser(userId: string, role: UserRole) {
         const query = { user: userId }; // MongoDB es inteligente si le pasas el string en findOne a veces, pero vamos a ser explícitos
 
-        if (role === UserRole.ADMIN || role === UserRole.MANAGER) {
+        if (role === UserRole.ADMIN || role === UserRole.MANAGER || role === UserRole.STORE) {
             return this.managerModel.findOne({
                 $or: [
                     { user: userId },
@@ -110,7 +110,7 @@ export class UsersService {
                 ]
             }).exec();
         }
-        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS) {
+        if (role === UserRole.CITIZEN || role === UserRole.RECYCLER) {
             return this.participantModel.findOne({
                 $or: [
                     { user: userId },
